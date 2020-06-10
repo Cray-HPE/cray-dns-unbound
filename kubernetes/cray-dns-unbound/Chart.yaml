@@ -6,4 +6,3 @@ version: 0.1.0
 sources:
 - https://github.com/NLnetLabs/unbound
 - https://gitlab.com/klutchell/unbound
-- https://github.com/kubernetes/contrib/tree/master/exec-healthz

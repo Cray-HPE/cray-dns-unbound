@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: "unbound"
+        image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .Root) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+{{- with .Values.resources }}
+        resources:
+{{ toYaml . | indent 10 }}
+{{- end }}
+        env:
+        - name: UNBOUND_CONFIG_DIRECTORY
+          value: "{{ .Values.containerConfigDirectory }}"
+        ports:
+        - name: "dns"
+          containerPort: {{ .Values.serverPort }}
+          protocol: "UDP"
+        volumeMounts:
+        - name: "unbound-conf"
+          mountPath: "{{ .Values.containerConfigDirectory }}"
+          readOnly: true
+        livenessProbe:
+          exec:
+            command:
+              - "nslookup"
+              - "health.check.unbound"
+              - "127.0.0.1:{{ .Values.serverPort }}"
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+        readinessProbe:
+          exec:
+            command:
+              - "nslookup"
+              - "health.check.unbound"
+              - "127.0.0.1:{{ .Values.serverPort }}"
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+      volumes:
+      - name: "unbound-conf"
+        configMap:
+          name: {{ template "cray-dns-unbound.fullname" . }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}

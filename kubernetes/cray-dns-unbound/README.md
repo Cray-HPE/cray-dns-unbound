@@ -1,9 +1,5 @@
 # cray-dns-unbound Helm chart
 
-In most cases the resources here should be left at their defaults. Should you need to add additional resources to your helm chart, you have the ability to do so. If you find that you're making changes that might be applicable to other Cray services, you're encouraged to submit a pull request to [the base service chart](https://stash.us.cray.com/projects/CLOUD/repos/cray-charts/browse/stable/cray-service).
-
-# Unbound
-
 [Unbound](http://www.unbound.net) is a caching DNS resolver written in C. It is suitable for use as an upstream DNS resolver for kube-dns. The image is based on alpine and includes unbound, bind-tools and bash and is approximately 20MB in size, making for fast startup. Google's [healthz container](https://hub.docker.com/r/googlecontainer/exechealthz/) is used as a sidecar to probe the unbound container on localhost, which allows unbound to run in a default configuration with restricted network access, and still play nice with kubelet.
 
 ## Configuration

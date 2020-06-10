@@ -1,0 +1,22 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+spec:
+  {{- if .Values.clusterIP }}
+  clusterIP: {{ .Values.clusterIP }}
+  {{- end }}
+  {{- if .Values.externalIP }}
+  externalIPs:
+    - {{ .Values.externalIP }}
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+  - name: dns
+    protocol: UDP
+    targetPort: {{ .Values.serverPort }}
+    port: 53

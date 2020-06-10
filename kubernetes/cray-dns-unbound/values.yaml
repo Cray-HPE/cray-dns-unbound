@@ -1,35 +1,26 @@
-replicaCount: 1
+replicaCount: 2
 
-# values that pertain to the unbound container, for more information
-# on unbound configuration see http://unbound.net/documentation/unbound.conf.html
-unbound:
-  image:
-    repository: klutchell/unbound
-    tag: "1.10.1"
-    pullPolicy: IfNotPresent
-  verbosity: 5
-  numThreads: 1
-  statsInterval: 0
-  statsCumulative: "no"
-  serverPort: 5353
+global:
+  appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
 
-# values that pertain to the exechealthz container, for more information see
-# https://github.com/kubernetes/contrib/tree/master/exec-healthz
-healthz:
-  image:
-    repository: gcr.io/google-containers/exechealthz
-    tag: "1.2"
-    pullPolicy: IfNotPresent
+imagesHost: dtr.dev.cray.com
+image:
+  repository: cray/cray-dns-unbound
+  pullPolicy: IfNotPresent
+verbosity: 5
+numThreads: 1
+statsInterval: 0
+statsCumulative: "no"
+serverPort: 5353
+containerConfigPath: /opt/unbound/etc/unbound
 
 resources: {}
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
 
-# clusterIP:
+clusterIP: ~
+externalIP: ~
 
 # Controls which IP address ranges unbound will allow queries from.
 # If you want to use unbound as an upstream for kube-dns, or allow other pods
@@ -38,7 +29,7 @@ affinity: {}
 
 allowedIpRanges:
   - "10.1.92.0/24"
-  - "10.0.0.0/8" 
+  - "10.0.0.0/8"
   - "127.0.0.0/8"
   - "192.168.0.0/16"
 
@@ -54,10 +45,14 @@ forwardZones:
     forwardIps:
       - "10.1.92.70"
 
+stubZones: []
+localZones: []
+
 # Unbound can store DNS records in a "local zone." This facility can be used to
 # assign context-specific names to a given IP address, and could also be used for
 # private DNS if you don't want or have an external resolver.
 
+localRecords: []
 # localRecords:
 # - name: "fake3.host.net"
 #   ip: "10.12.10.10"
