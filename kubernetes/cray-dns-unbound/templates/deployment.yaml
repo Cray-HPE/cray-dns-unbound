@@ -23,8 +23,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-mgr
       containers:
-      - name: "unbound"
+      - name: unbound
         image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .Root) }}
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
 {{- with .Values.resources }}
@@ -39,7 +40,7 @@ spec:
           containerPort: {{ .Values.serverPort }}
           protocol: "UDP"
         volumeMounts:
-        - name: "unbound-conf"
+        - name: unbound
           mountPath: "{{ .Values.containerConfigDirectory }}"
           readOnly: true
         livenessProbe:
@@ -59,7 +60,7 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 2
       volumes:
-      - name: "unbound-conf"
+      - name: unbound
         configMap:
           name: {{ template "cray-dns-unbound.fullname" . }}
 {{- with .Values.nodeSelector }}

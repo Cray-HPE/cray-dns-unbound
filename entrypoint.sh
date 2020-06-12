@@ -2,25 +2,15 @@
 
 set -e
 
-a_records_path="/opt/unbound/etc/unbound/a-records.conf"
+a_records_path="${UNBOUND_CONFIG_DIRECTORY}/a-records.conf"
+pid_path="/var/run/unbound/unbound.pid"
 
 if [[ "$@" == "" ]]; then
-  while true; do
-    /opt/unbound/update-records.py
-    a_records_sum=$(cat ${a_records_path}.sum)
-    if [[ "$a_records_sum" != "$(sha256sum ${a_records_path})" ]]; then
-      if [ -f /var/run/unbound/unbound.pid ]; then
-        echo "Found an updated A records config, restarting unbound..."
-        kill -SIGTERM $(cat /var/run/unbound/unbound.pid)
-      else
-        echo "Starting unbound..."
-      fi
-      unbound
-      sha256sum ${a_records_path} > ${a_records_path}.sum
-      echo "Unbound started"
-    fi
-    sleep 60
-  done
+  if ! unbound-anchor -a /var/run/unbound/root.key -v | grep 'success'; then
+    exit 1
+  fi
+  /srv/unbound/initialize.py
+  unbound -c ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
 else
   $@
 fi

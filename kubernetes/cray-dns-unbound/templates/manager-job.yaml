@@ -1,0 +1,25 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-manager
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+spec:
+  {{ with .Values.mgrJob.schedule -}}
+    schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
+  {{- end }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
+          containers:
+          - name: manager
+            image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .Root) }}
+            command: ["/srv/unbound/manager.py"]
+            env:
+            - name: KEA_API_ENDPOINT
+              value: "{{ .Values.keaApiEndpoint }}"

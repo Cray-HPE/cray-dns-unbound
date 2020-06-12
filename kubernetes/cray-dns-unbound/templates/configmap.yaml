@@ -5,30 +5,29 @@ metadata:
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 data:
+  a-records.json: |-
+    []
   unbound.conf: |-
     server:
         chroot: ""
-        num-threads: {{ .Values.numThreads }}
-        directory: "{{ .Values.containerConfigDirectory }}"
+        interface: 127.0.0.1
+        interface: 0.0.0.0
         port: {{ .Values.serverPort }}
         so-reuseport: yes
-        do-daemonize: yes
-        logfile: ""
+        do-ip6: no
+        do-daemonize: no
         use-syslog: no
+        logfile: ""
+        access-control: 127.0.0.1/32 allow
+        auto-trust-anchor-file: /var/run/unbound/root.key
+        num-threads: {{ .Values.numThreads }}
         verbosity: {{ .Values.verbosity }}
         statistics-interval: {{ .Values.statsInterval }}
         statistics-cumulative: {{ .Values.statsCumulative }}
 
-        module-config: "iterator"
-
-        interface: 127.0.0.1@{{ .Values.serverPort }}
-        interface: 0.0.0.0@{{ .Values.serverPort }}
-
-        #do-ip6: no
-        #domain-insecure: *
-        #private-domain: "craycray.info"
-
-        access-control: 127.0.0.1/32 allow
+        local-data: "health.check.unbound A 127.0.0.1"
+        local-data-ptr: "127.0.0.1 health.check.unbound"
+        include: {{ .Values.containerConfigDirectory }}/a-records.conf
 
         {{- range .Values.allowedIpRanges }}
         access-control: {{ . }} allow
@@ -38,10 +37,6 @@ data:
         local-data: "{{ .name }} A {{ .ip }}"
         local-data-ptr: "{{ .ip }} {{ .name }}"
         {{- end }}
-
-        local-data: "health.check.unbound A 127.0.0.1"
-        local-data-ptr: "127.0.0.1 health.check.unbound"
-        include: {{ .Values.containerConfigDirectory }}/a-records.conf
 
     {{- range .Values.localZones }}
         local-zone: "{{ .name }}" {{ .localType }}

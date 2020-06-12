@@ -1,7 +1,9 @@
-replicaCount: 2
-
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
+
+replicaCount: 2
+
+keaApiEndpoint: http://cray-dhcp-kea-api:8000
 
 imagesHost: dtr.dev.cray.com
 image:
@@ -11,8 +13,16 @@ verbosity: 5
 numThreads: 1
 statsInterval: 0
 statsCumulative: "no"
-serverPort: 5353
-containerConfigPath: /opt/unbound/etc/unbound
+serverPort: 5053
+containerConfigDirectory: /etc/unbound
+
+mgrJob:
+  schedule:
+    minute: "*/1"
+    hour: "*"
+    day_of_month: "*"
+    month: "*"
+    day_of_week: "*"
 
 resources: {}
 nodeSelector: {}
@@ -36,14 +46,14 @@ allowedIpRanges:
 # You can set as many forward zones as needed by specifying the zone name
 # and forward hosts. Forward hosts can be set by hostname or ip.
 
-forwardZones:
+forwardZones: []
   # This will be central dns
-  - name: "."
-    forwardIps:
-      - 172.30.84.40
-  - name: "craycray.info"
-    forwardIps:
-      - "10.1.92.70"
+  # - name: "."
+  #   forwardIps:
+  #     - 172.30.84.40
+  # - name: "craycray.info"
+  #   forwardIps:
+  #     - "10.1.92.70"
 
 stubZones: []
 localZones: []
