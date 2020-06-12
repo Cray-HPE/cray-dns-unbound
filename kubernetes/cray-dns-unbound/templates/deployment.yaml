@@ -46,17 +46,17 @@ spec:
         livenessProbe:
           exec:
             command:
-              - "nslookup"
-              - "health.check.unbound"
-              - "127.0.0.1:{{ .Values.serverPort }}"
+            - "nslookup"
+            - "health.check.unbound"
+            - "127.0.0.1:{{ .Values.serverPort }}"
           initialDelaySeconds: 10
           timeoutSeconds: 2
         readinessProbe:
           exec:
             command:
-              - "nslookup"
-              - "health.check.unbound"
-              - "127.0.0.1:{{ .Values.serverPort }}"
+            - "nslookup"
+            - "health.check.unbound"
+            - "127.0.0.1:{{ .Values.serverPort }}"
           initialDelaySeconds: 10
           timeoutSeconds: 2
       volumes:
