@@ -67,4 +67,3 @@ for num in range(50,55):
         
     print(r.text)
     print(r.json())
-
