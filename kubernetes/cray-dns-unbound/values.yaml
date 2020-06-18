@@ -36,12 +36,18 @@ externalIP: ~
 # If you want to use unbound as an upstream for kube-dns, or allow other pods
 # to query the resolver directly, you'll at least need to allow the
 # clusterIpV4Cidr range.
-
+#
+#
+# Following are Shasta subnets beginning v1.3 
+# HMN          - 10.254.0.0/17
+# NMN          - 10.252.0.0/17
+# CABINETS HMN - 10.104/16
+# CABINETS NMN - 10.100/16 (not a typo)
+# METALLB HMN  - 10.94.100/24
+# METALLB NMN  - 10.92.100/24
 allowedIpRanges:
-  - "10.1.92.0/24"
   - "10.0.0.0/8"
   - "127.0.0.0/8"
-  - "192.168.0.0/16"
 
 # You can set as many forward zones as needed by specifying the zone name
 # and forward hosts. Forward hosts can be set by hostname or ip.
