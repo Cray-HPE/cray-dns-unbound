@@ -23,10 +23,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
-      serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-mgr
       containers:
       - name: unbound
-        image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .Root) }}
+        image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
 {{- with .Values.resources }}
         resources:
@@ -41,8 +40,11 @@ spec:
           protocol: "UDP"
         volumeMounts:
         - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}"
-          readOnly: true
+          mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
+          subPath: unbound.conf
+        - name: unbound
+          mountPath: "{{ .Values.containerConfigDirectory }}/records.json"
+          subPath: records.json
         livenessProbe:
           exec:
             command:
@@ -63,6 +65,11 @@ spec:
       - name: unbound
         configMap:
           name: {{ template "cray-dns-unbound.fullname" . }}
+          items:
+          - key: unbound.conf
+            path: unbound.conf
+          - key: records.json
+            path: records.json
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

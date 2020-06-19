@@ -2,9 +2,6 @@
 
 set -e
 
-a_records_path="${UNBOUND_CONFIG_DIRECTORY}/a-records.conf"
-pid_path="/var/run/unbound/unbound.pid"
-
 if [[ "$@" == "" ]]; then
   if ! unbound-anchor -a /var/run/unbound/root.key -v | grep 'success'; then
     exit 1

@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 data:
-  a-records.json: |-
+  records.json: |-
     []
   unbound.conf: |-
     server:
@@ -27,7 +27,7 @@ data:
 
         local-data: "health.check.unbound A 127.0.0.1"
         local-data-ptr: "127.0.0.1 health.check.unbound"
-        include: {{ .Values.containerConfigDirectory }}/a-records.conf
+        include: {{ .Values.containerConfigDirectory }}/records.conf
 
         {{- range .Values.allowedIpRanges }}
         access-control: {{ . }} allow

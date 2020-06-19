@@ -1,119 +1,118 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import json
 import requests
+import subprocess
+import time
 
-# TODO - zone file name should come from config
-filename = "./zones.conf"
-# TODO  - Kea API endpoint should come from K8S
-kea_api_endpoint = 'http://cray-dhcp-kea-api:8000'
-
+def run_command(cmd):
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = p.stdout.decode('utf-8')
+    print(output)
+    if p.returncode != 0:
+        raise SystemExit('Error running command')
+    return output
 
 #
 # Query Kea for active server lease information
 #
+time.sleep(3) # a really quick sleep upfront as it'll give our istio-proxy channel out to be ready
 print('Querying Kea in the cluster to find any updated records we need to set')
 
 kea_headers = {"Content-Type": "application/json"}
-kea_request = {"command": "lease4-get-all", "service": [ "dhcp4" ] }
+kea_request = {"command": "lease4-get-all", "service": ["dhcp4"]}
 
-try:
-    # Convert explicitly to json to catch errors up front.
-    kea_request_json = json.dumps(kea_request)
+# we'll give some time for connection errors to settle, as this job will work within the
+# istio service mesh, and connectivity out through the istio-proxy to kea may take just
+# a few. We'll give it about 30 seconds before we fail hard for the job
+connection_retries = 0
+max_connection_retries = 10
+wait_seconds_between_retries = 3
+while True:
+    try:
+        # Convert explicitly to json to catch errors up front.
+        kea_request_json = json.dumps(kea_request)
 
-    # Call Kea to retrieve active kea_response
-    kea_response = requests.post(url = kea_api_endpoint, \
-                                headers = kea_headers, \
-                                data = kea_request_json)
-    kea_response.raise_for_status()
+        # Call Kea to retrieve active kea_response
+        kea_response = requests.post(url = os.environ['KEA_API_ENDPOINT'],
+                                     headers = kea_headers,
+                                     data = kea_request_json)
+        kea_response.raise_for_status()
 
-    kea_response_json = kea_response.json()
-except requests.exceptions.ConnectionError as err:
-    print('Cannot connect to URL: {}'.format(kea_api_endpoint))
-    raise SystemExit(err)
-except requests.exceptions.Timeout as err:
-    print('Timeout for request: {}'.format(kea_api_endpoint))
-    raise SystemExit(err)
-except requests.exceptions.RequestException as err:
-    print('Error occurred in kea response from: {}'.format(kea_response.url))
-    print('    HTTP error code: {}'.format(kea_response.status_code))
-    print('    HTTP response  : {}'.format(kea_response.text))
-    raise SystemExit(err)
-except Exception as err:
-    raise SystemExit(err)
+        kea_response_json = kea_response.json()
+        break
+    except Exception as err:
+        connection_retries += 1
+        message = 'Error connecting to Kea at {} to get leases: {}'.format(os.environ['KEA_API_ENDPOINT'], err)
+        if connection_retries <= max_connection_retries:
+            print('{}, retrying shortly...'.format(message))
+            time.sleep(wait_seconds_between_retries)
+            continue
+        else:
+            print(message)
+            raise SystemExit(err)
 
 kea_response_json = kea_response.json()
 kea_return_code = kea_response_json[0]['result']
 
 # It is possible that there are no leases.
+if kea_return_code == 3:
+    print('No leases found in Kea, exiting.')
+    sys.exit()
 if kea_return_code != 0:
     print('Kea HTTP call success, but error in results:')
     print('    Return code: {}'.format(kea_return_code))
     print('    Data       : {}'.format(kea_response_json))
     raise SystemExit()
 
-# Likely some dict comprehension way but can't see it now
-lease_entries = [] 
-for lease in kea_response_json[0]['arguments']['leases']:
-    if not lease['hostname'] or not lease['ip-address']:
-        continue
-    lease_entries.append({'hostname':lease['hostname'], 'ip-address':lease['ip-address']}) 
-
 
 #
 # Load and parse local DNS config file for current DNS entries
 #
-print('Loading live DNS entries from local configuration file')
-
-zone_conf_file = open(filename,"r")
-
-# Create a list from the zone file after a bit of cleanup
-# All zone entries are managed by this program and will have
-# the following original format, parsed and put in a list:
-#    local-data: "nid0001 A 10.12.13.1"
-#    local-data-ptr: "10.12.13.1 nid0001"
-zone_list = [ line.strip().replace(':','').replace('"','').split() \
-              for line in zone_conf_file]
-zone_conf_file.close()
-
-# Likely some list/dict comprehension thing here I'm not seeing.
-dns_entries = []
-for line in zone_list:
-    # Only A records - PTRs are just 1:1 mirror images.
-    if not 'local-data' in line:
-        continue
-    dns_entries.append({'hostname':line[1], 'ip-address':line[3]})
+print('Loading current DNS entries from configmap')
+output = run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
+    os.environ['KUBERNETES_NAMESPACE'], '-o', 'jsonpath={.data[\'records\\.json\']}'])
+try:
+    records = json.loads(output)
+except Exception as err:
+    raise SystemExit(err)
 
 #
-# Match and update zone file entries with Kea DHCP entries
+# Match and update a records found in configmap with Kea DHCP entries
 #
-print('Comparing values and creating new DNS config file')
+print('Comparing values and creating new A records config, if changes detected')
 # Any proper value in dhcp leases that's not in dns is a diff
-# and we will rewrite the config file.
+# and we will rewrite the config.
+# TODO: do we need to account for leases that are removed from DHCP? If so, that's not addressed here
 diff = False
-for lease in lease_entries:
-    found = False
-    for entry in dns_entries:
-        if lease['hostname'] == entry['hostname'] and \
-           lease['ip-address'] == entry['ip-address']:
-            found = True
-        else:
-            continue
-    if found is False:
-        print('    DNS entry not found {}'.format(lease))
+for lease in kea_response_json[0]['arguments']['leases']:
+    if not lease['hostname'] or not lease['ip-address']:
+        # ignore any Kea lease that doesn't have both a hostname and IP
+        continue
+    create_new = True
+    for record in records:
+        if lease['hostname'] == record['hostname']:
+            create_new = False
+            if lease['ip-address'] != record['ip-address']:
+                record['ip-address'] = lease['ip-address']
+                diff = True
+                print('    Existing hostname DNS record to update {}'.format(lease))
+            break
+    if create_new:
+        records.append({'hostname': lease['hostname'], 'ip-address': lease['ip-address']})
         diff = True
-        break
+        print('    New hostname DNS record to add {}'.format(lease))
 
 if diff is True:
-    print('    Differences found.  Writing DNS file.')
-    zone_conf_file = open(filename,"w+")
-    for entry in lease_entries:
-        print('    New entry:')
-        print('      local-data: "{} A {}"'.format(entry['hostname'],entry['ip-address']))
-        print('      local-data-ptr: "{} {}"'.format(entry['ip-address'],entry['hostname']))
-        zone_conf_file.write('    local-data: "{} A {}"\n'.format(entry['hostname'],entry['ip-address']))
-        zone_conf_file.write('    local-data-ptr: "{} {}"\n'.format(entry['ip-address'],entry['hostname']))
-    zone_conf_file.close()
+    print('    Differences found.  Writing new DNS A records configuration to our configmap.')
+    patch_content = '{{"data": {{"records.json": "{}"}}}}'.format(json.dumps(records).replace('"', '\\"'))
+    run_command(['kubectl', 'patch', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
+        os.environ['KUBERNETES_NAMESPACE'], '-p', patch_content])
+    print('  Running a rolling restart of the deployment...')
+    run_command(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'], 'rollout', 'restart', 'deployment',
+        os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
+
 else:
     print('    No differences found.  Skipping DNS update')

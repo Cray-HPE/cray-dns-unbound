@@ -7,7 +7,7 @@ metadata:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 spec:
   {{ with .Values.mgrJob.schedule -}}
-    schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
+  schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
   {{- end }}
   concurrencyPolicy: Forbid
   jobTemplate:
@@ -18,8 +18,14 @@ spec:
           serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
           containers:
           - name: manager
-            image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .Root) }}
+            image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
             command: ["/srv/unbound/manager.py"]
             env:
             - name: KEA_API_ENDPOINT
               value: "{{ .Values.keaApiEndpoint }}"
+            - name: KUBERNETES_UNBOUND_CONFIGMAP_NAME
+              value: "{{ template "cray-dns-unbound.fullname" . }}"
+            - name: KUBERNETES_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: KUBERNETES_UNBOUND_DEPLOYMENT_NAME
+              value: "{{ template "cray-dns-unbound.fullname" . }}"
