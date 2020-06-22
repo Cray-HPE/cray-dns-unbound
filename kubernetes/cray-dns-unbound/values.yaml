@@ -1,0 +1,74 @@
+global:
+  appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
+
+nmnLoadBalancerIp: 10.92.100.225
+hmnLoadBalancerIp: 10.94.100.225
+
+replicaCount: 2
+
+keaApiEndpoint: http://cray-dhcp-kea-api:8000
+
+imagesHost: dtr.dev.cray.com
+image:
+  repository: cray/cray-dns-unbound
+  pullPolicy: IfNotPresent
+verbosity: 5
+numThreads: 1
+statsInterval: 0
+statsCumulative: "no"
+serverPort: 5053
+containerConfigDirectory: /etc/unbound
+
+mgrJob:
+  schedule:
+    minute: "*/1"
+    hour: "*"
+    day_of_month: "*"
+    month: "*"
+    day_of_week: "*"
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Controls which IP address ranges unbound will allow queries from.
+# If you want to use unbound as an upstream for kube-dns, or allow other pods
+# to query the resolver directly, you'll at least need to allow the
+# clusterIpV4Cidr range.
+#
+#
+# Following are Shasta subnets beginning v1.3
+# HMN          - 10.254.0.0/17
+# NMN          - 10.252.0.0/17
+# CABINETS HMN - 10.104/16
+# CABINETS NMN - 10.100/16 (not a typo)
+# METALLB HMN  - 10.94.100/24
+# METALLB NMN  - 10.92.100/24
+allowedIpRanges:
+  - "10.0.0.0/8"
+  - "127.0.0.0/8"
+
+# You can set as many forward zones as needed by specifying the zone name
+# and forward hosts. Forward hosts can be set by hostname or ip.
+
+forwardZones: []
+  # This will be central dns
+  # - name: "."
+  #   forwardIps:
+  #     - 172.30.84.40
+  # - name: "craycray.info"
+  #   forwardIps:
+  #     - "10.1.92.70"
+
+stubZones: []
+localZones: []
+
+# Unbound can store DNS records in a "local zone." This facility can be used to
+# assign context-specific names to a given IP address, and could also be used for
+# private DNS if you don't want or have an external resolver.
+
+localRecords: []
+# localRecords:
+# - name: "fake3.host.net"
+#   ip: "10.12.10.10"
