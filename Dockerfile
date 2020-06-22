@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM dtr.dev.cray.com/cache/alpine:3.8
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
