@@ -32,16 +32,13 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-clusterIP: ~
-externalIP: ~
-
 # Controls which IP address ranges unbound will allow queries from.
 # If you want to use unbound as an upstream for kube-dns, or allow other pods
 # to query the resolver directly, you'll at least need to allow the
 # clusterIpV4Cidr range.
 #
 #
-# Following are Shasta subnets beginning v1.3 
+# Following are Shasta subnets beginning v1.3
 # HMN          - 10.254.0.0/17
 # NMN          - 10.252.0.0/17
 # CABINETS HMN - 10.104/16

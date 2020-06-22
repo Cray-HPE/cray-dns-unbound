@@ -24,5 +24,6 @@ RUN chmod +x /srv/unbound/entrypoint.sh && \
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 
 EXPOSE 5053/udp
+EXPOSE 5053/tcp
 
 ENTRYPOINT ["/srv/unbound/entrypoint.sh"]

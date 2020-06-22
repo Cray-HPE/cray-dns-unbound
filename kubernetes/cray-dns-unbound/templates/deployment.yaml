@@ -35,9 +35,12 @@ spec:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "{{ .Values.containerConfigDirectory }}"
         ports:
-        - name: "dns"
+        - name: udp
           containerPort: {{ .Values.serverPort }}
-          protocol: "UDP"
+          protocol: UDP
+        - name: tcp
+          containerPort: {{ .Values.serverPort }}
+          protocol: TCP
         volumeMounts:
         - name: unbound
           mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
