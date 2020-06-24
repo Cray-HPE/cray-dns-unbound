@@ -1,10 +1,12 @@
-FROM dtr.dev.cray.com/cache/alpine:3.8
+FROM alpine:3.12
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
-RUN apk add --no-cache bash python3
+RUN apk add --no-cache bash python3 py-pip
+RUN cp /etc/apk/repositories /etc/apk/repositories.bak
 RUN echo "http://dl-4.alpinelinux.org/alpine/latest-stable/main/" >> /etc/apk/repositories && \
     apk add --no-cache unbound
+RUN mv /etc/apk/repositories.bak /etc/apk/repositories
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests
@@ -23,7 +25,12 @@ RUN chmod +x /srv/unbound/entrypoint.sh && \
     chmod +x /srv/unbound/manager.py
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 
+RUN chown -R unbound /srv/unbound
+RUN chown -R unbound /etc/unbound
+RUN chown -R unbound /var/run/unbound
+
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
 
+USER unbound
 ENTRYPOINT ["/srv/unbound/entrypoint.sh"]

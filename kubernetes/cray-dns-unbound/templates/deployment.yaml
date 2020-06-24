@@ -23,6 +23,10 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        fsGroup: 101
       containers:
       - name: unbound
         image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
