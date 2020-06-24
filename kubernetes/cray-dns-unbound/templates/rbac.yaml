@@ -13,7 +13,7 @@ metadata:
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 rules:
-- apiGroups: ["extensions"]
+- apiGroups: ["extensions", "apps"]
   resources: ["deployments"]
   resourceNames: ["{{ template "cray-dns-unbound.fullname" . }}"]
   verbs: ["get", "patch"]

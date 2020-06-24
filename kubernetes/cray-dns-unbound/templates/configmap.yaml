@@ -9,6 +9,7 @@ data:
     []
   unbound.conf: |-
     server:
+        module-config: "iterator"
         chroot: ""
         interface: 127.0.0.1
         interface: 0.0.0.0
@@ -19,7 +20,6 @@ data:
         use-syslog: no
         logfile: ""
         access-control: 127.0.0.1/32 allow
-        auto-trust-anchor-file: /var/run/unbound/root.key
         num-threads: {{ .Values.numThreads }}
         verbosity: {{ .Values.verbosity }}
         statistics-interval: {{ .Values.statsInterval }}
