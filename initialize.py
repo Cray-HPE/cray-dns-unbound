@@ -16,5 +16,6 @@ with open(records_json_path) as f:
             records_conf, zone['hostname'], zone['ip-address'], zone['ip-address'], zone['hostname'])
         records_conf = '{}local-data: "{}.local A {}"\nlocal-data-ptr: "{} {}.local"\n'.format(
             records_conf, zone['hostname'], zone['ip-address'], zone['ip-address'], zone['hostname'])
+
 with open(records_conf_path, 'w') as f:
     f.write(records_conf)
