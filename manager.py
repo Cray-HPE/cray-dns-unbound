@@ -19,6 +19,7 @@ def run_command(cmd):
 # Query Kea for active server lease information
 #
 time.sleep(3) # a really quick sleep upfront as it'll give our istio-proxy channel out to be ready
+              # better chance for a successful first attempt connecting to Kea through the mesh
 print('Querying Kea in the cluster to find any updated records we need to set')
 
 kea_headers = {"Content-Type": "application/json"}
@@ -47,7 +48,8 @@ while True:
         connection_retries += 1
         message = 'Error connecting to Kea at {} to get leases: {}'.format(os.environ['KEA_API_ENDPOINT'], err)
         if connection_retries <= max_connection_retries:
-            print('{}, retrying shortly...'.format(message))
+            print('Kea connection attempt failed: {}'.format(message))
+            print('Retrying connection to Kea shortly...')
             time.sleep(wait_seconds_between_retries)
             continue
         else:
@@ -66,7 +68,7 @@ if kea_return_code != 0:
     print('    Return code: {}'.format(kea_return_code))
     print('    Data       : {}'.format(kea_response_json))
     raise SystemExit()
-
+print('Got Kea leases successfully!')
 
 #
 # Load and parse local DNS config file for current DNS entries
@@ -113,6 +115,5 @@ if diff is True:
     print('  Running a rolling restart of the deployment...')
     run_command(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'], 'rollout', 'restart', 'deployment',
         os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
-
 else:
     print('    No differences found.  Skipping DNS update')
