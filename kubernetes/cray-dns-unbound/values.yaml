@@ -62,7 +62,11 @@ forwardZones: []
   #     - "10.1.92.70"
 
 stubZones: []
-localZones: []
+
+# Required internally for v1.3 (CASMNET-109)
+localZones:
+  - name: "local"
+    localType: static
 
 # Unbound can store DNS records in a "local zone." This facility can be used to
 # assign context-specific names to a given IP address, and could also be used for
