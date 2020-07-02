@@ -4,21 +4,14 @@ import os
 import sys
 import json
 import requests
-import subprocess
 import time
-
-def run_command(cmd):
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    output = p.stdout.decode('utf-8')
-    print(output)
-    if p.returncode != 0:
-        raise SystemExit('Error running command')
-    return output
+import shared
 
 #
 # Query Kea for active server lease information
 #
 time.sleep(3) # a really quick sleep upfront as it'll give our istio-proxy channel out to be ready
+              # better chance for a successful first attempt connecting to Kea through the mesh
 print('Querying Kea in the cluster to find any updated records we need to set')
 
 kea_headers = {"Content-Type": "application/json"}
@@ -47,7 +40,8 @@ while True:
         connection_retries += 1
         message = 'Error connecting to Kea at {} to get leases: {}'.format(os.environ['KEA_API_ENDPOINT'], err)
         if connection_retries <= max_connection_retries:
-            print('{}, retrying shortly...'.format(message))
+            print('Kea connection attempt failed: {}'.format(message))
+            print('Retrying connection to Kea shortly...')
             time.sleep(wait_seconds_between_retries)
             continue
         else:
@@ -66,13 +60,13 @@ if kea_return_code != 0:
     print('    Return code: {}'.format(kea_return_code))
     print('    Data       : {}'.format(kea_response_json))
     raise SystemExit()
-
+print('Got Kea leases successfully!')
 
 #
 # Load and parse local DNS config file for current DNS entries
 #
 print('Loading current DNS entries from configmap')
-output = run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
+output = shared.run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
     os.environ['KUBERNETES_NAMESPACE'], '-o', 'jsonpath={.data[\'records\\.json\']}'])
 try:
     records = json.loads(output)
@@ -108,11 +102,10 @@ for lease in kea_response_json[0]['arguments']['leases']:
 if diff is True:
     print('    Differences found.  Writing new DNS A records configuration to our configmap.')
     patch_content = '{{"data": {{"records.json": "{}"}}}}'.format(json.dumps(records).replace('"', '\\"'))
-    run_command(['kubectl', 'patch', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
+    shared.run_command(['kubectl', 'patch', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
         os.environ['KUBERNETES_NAMESPACE'], '-p', patch_content])
     print('  Running a rolling restart of the deployment...')
-    run_command(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'], 'rollout', 'restart', 'deployment',
+    shared.run_command(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'], 'rollout', 'restart', 'deployment',
         os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
-
 else:
     print('    No differences found.  Skipping DNS update')
