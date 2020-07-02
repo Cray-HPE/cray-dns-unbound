@@ -8,6 +8,12 @@ replicaCount: 2
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
 
+coreDNS:
+  forwardToUnbound: true
+  namespace: kube-system
+  configMapName: coredns
+  deploymentName: coredns
+
 imagesHost: dtr.dev.cray.com
 image:
   repository: cray/cray-dns-unbound

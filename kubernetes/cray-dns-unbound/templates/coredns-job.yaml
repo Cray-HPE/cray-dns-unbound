@@ -1,0 +1,31 @@
+{{- if .Values.coreDNS.forwardToUnbound -}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-coredns
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+spec:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: 1
+    helm.sh/hook-delete-policy: before-hook-creation
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-coredns
+      containers:
+      - name: coredns
+        image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
+        command: ["/srv/unbound/coredns.py"]
+        env:
+        - name: NMN_LOAD_BALANCER_IP
+          value: "{{ .Values.nmnLoadBalancerIp }}"
+        - name: KUBERNETES_COREDNS_CONFIGMAP_NAME
+          value: "{{ .Values.coreDNS.configMapName }}"
+        - name: KUBERNETES_COREDNS_NAMESPACE
+          value: "{{ .Values.coreDNS.namespace }}"
+        - name: KUBERNETES_COREDNS_DEPLOYMENT_NAME
+          value: "{{ .Values.coreDNS.deploymentName }}"
+{{- end }}

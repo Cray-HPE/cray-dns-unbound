@@ -36,3 +36,45 @@ roleRef:
   kind: Role
   name: {{ template "cray-dns-unbound.fullname" . }}-manager-role
   apiGroup: rbac.authorization.k8s.io
+
+{{- if .Values.coreDNS.forwardToUnbound -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-coredns
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+rules:
+- apiGroups: ["extensions", "apps"]
+  resources: ["deployments"]
+  resourceNames: ["{{ .Values.coreDNS.deploymentName }}"]
+  verbs: ["get", "patch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["{{ .Values.coreDNS.configMapName }}"]
+  verbs: ["get", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role-binding
+  namespace: {{ .Values.coreDNS.namespace }}
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "cray-dns-unbound.fullname" . }}-coredns
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
+{{- end }}

@@ -19,10 +19,11 @@ RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
     mkdir -p /var/run/unbound
 
 COPY unbound.conf ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
-COPY entrypoint.sh initialize.py manager.py /srv/unbound/
+COPY entrypoint.sh shared.py initialize.py manager.py coredns.py /srv/unbound/
 RUN chmod +x /srv/unbound/entrypoint.sh && \
     chmod +x /srv/unbound/initialize.py && \
-    chmod +x /srv/unbound/manager.py
+    chmod +x /srv/unbound/manager.py && \
+    chmod +x /srv/unbound/coredns.py
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 
 RUN chown -R unbound /srv/unbound
