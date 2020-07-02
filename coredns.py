@@ -6,12 +6,12 @@ import shared
 import re
 import time
 
-time.sleep(3)  # a really quick sleep upfront as it'll give our istio-proxy channel out to be ready
-              # better chance for a successful first attempt connecting to Kea through the mesh
+time.sleep(3) # a really quick sleep upfront as it'll give our istio-proxy channel out to be ready
+              # better chance for a successful first attempt connecting out through the mesh
 
 print('Loading current CoreDNS configmap in namespace {}: {}'.format(os.environ['KUBERNETES_COREDNS_NAMESPACE'], os.environ['KUBERNETES_COREDNS_CONFIGMAP_NAME']))
 # we'll give some time for connection errors to settle, as this job will work within the
-# istio service mesh, and connectivity out through the istio-proxy to kea may take just
+# istio service mesh, and connectivity out through the istio-proxy out may take just
 # a few. We'll give it about 30 seconds before we fail hard for the job
 connection_retries = 0
 max_connection_retries = 10
