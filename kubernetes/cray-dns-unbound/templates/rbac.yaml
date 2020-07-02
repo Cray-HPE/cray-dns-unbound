@@ -37,7 +37,7 @@ roleRef:
   name: {{ template "cray-dns-unbound.fullname" . }}-manager-role
   apiGroup: rbac.authorization.k8s.io
 
-{{- if .Values.coreDNS.forwardToUnbound -}}
+{{ if .Values.coreDNS.forwardToUnbound -}}
 ---
 apiVersion: v1
 kind: ServiceAccount
