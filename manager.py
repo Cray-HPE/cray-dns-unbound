@@ -20,7 +20,7 @@ time.sleep(3) # a really quick sleep upfront as it'll give our istio-proxy chann
 print('Querying Kea in the cluster to find any updated records we need to set')
 
 kea_headers = {"Content-Type": "application/json"}
-kea_request = {"command": "lease4-get-all", "service": ["dhcp4"]}
+kea_request = {"command": "config-get", "service": ["dhcp4"]}
 
 # we'll give some time for connection errors to settle, as this job will work within the
 # istio service mesh, and connectivity out through the istio-proxy to kea may take just
@@ -69,18 +69,22 @@ if kea_return_code != 0:
 print('Got Kea leases successfully!')
 
 # A main data structure used later
-kea_leases = kea_response_json[0]['arguments']['leases']
+kea_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
+
 
 #
-# CASMNET-124 nid -> nid-nmn for v1.3 as nid is HSN
+# CASMNET-124: nid -> nid-nmn for v1.3 as nid is HSN
+#   TODO - move this to Central DNS after data naming cleanup
 #
 for lease in kea_leases:
     # looking for any name nid###### from Kea (not found = -1)
     if lease['hostname'].find('nid') > -1:
         lease['hostname'] = lease['hostname'] + '-nmn'
 
+
 #
-# Query HSM for CNAME/alias information
+# CASMNET-121: Query HSM for CNAME/alias information
+#   TODO - move this to Central DNS
 #
 print('Querying HSM to find any xname records we need to set')
 # [
@@ -124,14 +128,15 @@ hsm_records = hsm_response.json()
 print('Merging new HSM xnames into Kea lease data structure')
 new_records = []
 for lease in kea_leases:
-    # Not all records in HSM are desired, only those with matching
-    # IP addresses and different hostnames - resulting in CNAMES.
-    if not lease['hostname'] or not lease['ip-address']:
+    # Skip leases with missing data
+    if 'hostname' not in lease or 'ip-address' not in lease:
         continue
 
+    # Not all records in HSM are desired, only those with matching
+    # IP addresses and different hostnames - resulting in CNAMES.
     for record in hsm_records:
         # Skip records without data
-        if not record['IPAddress'] or not record['ComponentID']:
+        if 'IPAddress' not in record or 'ComponentID' not in record:
             continue
 
         # Skip records with same hostname (expected HSM/Kea duplicates)
@@ -140,7 +145,7 @@ for lease in kea_leases:
 
         if record['IPAddress'] == lease['ip-address']:
             print('    New CNAME record  {}'.format({'hostname': record['ComponentID'], 'ip-address': record['IPAddress']}))
-            print('    Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
+            print('        Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
             new_records.append({'hostname': record['ComponentID'], 'ip-address': record['IPAddress']})
             break
 
@@ -148,6 +153,98 @@ for lease in kea_leases:
 # Merge HSM xnames/CNAMES with Kea lease nid-names.  kea_leases is SoR
 #
 kea_leases.extend(new_records)
+
+
+#
+# CASMNET-130: UANs need to have <hostname>-mgmt entry to management network
+#   TODO - move this to Central DNS expanding use for all Role/SubRole Aliases
+#
+print('Querying SLS to find UAN records')
+# {
+#   "Parent": "x3000c0s26b0",
+#   "Xname": "x3000c0s26b0n0",
+#   "Type": "comptype_node",
+#   "Class": "River",
+#   "TypeString": "Node",
+#   "ExtraProperties": {
+#     "Aliases": [
+#       "uan01"
+#     ],
+#     "Role": "Application",
+#     "SubRole": "UAN"
+#   }
+# }
+sls_request = 'http://cray-sls/v1/hardware'
+connection_retries = 0
+max_connection_retries = 10
+wait_seconds_between_retries = 3
+while True:
+    try:
+        sls_response = requests.get(url=sls_request)
+        sls_response.raise_for_status()
+        break
+    except Exception as err:
+        connection_retries += 1
+        message = 'Error connecting to SLS at {} to get records: {}'.format(sls_request, err)
+        if connection_retries <= max_connection_retries:
+            print('{}, retrying shortly...'.format(message))
+            time.sleep(wait_seconds_between_retries)
+            continue
+        else:
+            print(message)
+            # Consider this a fatal exception currently to keep all records in sync
+            # TODO - should this be non-fatal to allow A-record changes?
+            raise SystemExit(err)
+sls_records = sls_response.json()
+
+#
+# Find UAN CNAME records in SLS
+#
+print('Merging new SLS UAN names into Kea lease data structure')
+new_records = []
+# Not all records in SLS are desired, only those with xnames
+# where the SubRole is UAN.
+for record in sls_records:
+    # Skip records without minimal required data
+    if 'ExtraProperties' not in record or \
+        'Role' not in record['ExtraProperties']:
+        continue
+
+    # UAN is an Application SubRole.  Skip records without SubRole.
+    # Name aliases need to exist as well.
+    if 'SubRole' not in record['ExtraProperties'] or \
+        'Aliases' not in record['ExtraProperties']:
+        continue
+
+    if record['ExtraProperties']['SubRole'] == 'UAN':
+        hmn_xname = record['Parent']
+        nmn_xname = record['Xname']
+
+        for lease in kea_leases:
+            # Skip leases without hostnames
+            if lease['hostname'] == '':
+                continue
+
+            # Get the HMN IP address
+            if lease['hostname'] == hmn_xname:
+                for alias in record['ExtraProperties']['Aliases']:
+                    mgmt_alias = alias + '-mgmt'
+                    print('    New CNAME record  {}'.format({'hostname': mgmt_alias, 'ip-address': lease['ip-address']}))
+                    print('        Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
+                    new_records.append({'hostname': mgmt_alias, 'ip-address': lease['ip-address']})
+
+            # Get the NMN IP address
+            if lease['hostname'] == nmn_xname:
+                for alias in record['ExtraProperties']['Aliases']:
+                    print('    New CNAME record  {}'.format({'hostname': alias, 'ip-address': lease['ip-address']}))
+                    print('        Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
+                    new_records.append({'hostname': alias, 'ip-address': lease['ip-address']})
+
+#
+# Merge SLS UAI CNAMES with Kea leases nid-names.  kea_leases is SoR
+#
+kea_leases.extend(new_records)
+
 
 #
 # Load current running DNS entries
@@ -171,8 +268,8 @@ print('Comparing values and creating new A records config, if changes detected')
 # TODO: do we need to account for leases that are removed from DHCP? If so, that's not addressed here
 diff = False
 for lease in kea_leases:
-    if not lease['hostname'] or not lease['ip-address']:
-        # ignore any Kea lease that doesn't have both a hostname and IP
+    # Ignore any Kea lease that doesn't have both a hostname and IP
+    if 'hostname' not in lease or 'ip-address' not in lease:
         continue
     create_new = True
     for record in records:
