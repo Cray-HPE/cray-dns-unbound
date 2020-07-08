@@ -156,10 +156,13 @@ kea_leases.extend(new_records)
 
 
 #
-# CASMNET-130: UANs need to have <hostname>-mgmt entry to management network
+# CASMNET-130 and CASMNET-137: UANs and Management NCNs need to have 
+#   <hostname>-mgmt entry to the hardware management network and
+#   <hostname>-nmn for the node management network.
+#   the 
 #   TODO - move this to Central DNS expanding use for all Role/SubRole Aliases
 #
-print('Querying SLS to find UAN records')
+print('Querying SLS to find Management and Application records')
 # {
 #   "Parent": "x3000c0s26b0",
 #   "Xname": "x3000c0s26b0n0",
@@ -198,50 +201,48 @@ while True:
 sls_records = sls_response.json()
 
 #
-# Find UAN CNAME records in SLS
+# Find UAN and Manager/Worker CNAME records in SLS.
+# NOTE:  This is the one place where we are NOT using Kea as SoR because
+#        NCNs currently are NOT dynamic/DHCP.
 #
-print('Merging new SLS UAN names into Kea lease data structure')
+print('Merging new SLS Application and Management names into lease data structure')
 new_records = []
 # Not all records in SLS are desired, only those with xnames
 # where the SubRole is UAN.
-for record in sls_records:
+for sls in sls_records:
     # Skip records without minimal required data
-    if 'ExtraProperties' not in record or \
-        'Role' not in record['ExtraProperties']:
+    if 'ExtraProperties' not in sls or \
+        'Role' not in sls['ExtraProperties'] or \
+        'Aliases' not in sls['ExtraProperties']:
         continue
 
-    # UAN is an Application SubRole.  Skip records without SubRole.
-    # Name aliases need to exist as well.
-    if 'SubRole' not in record['ExtraProperties'] or \
-        'Aliases' not in record['ExtraProperties']:
-        continue
+    if sls['ExtraProperties']['Role'] == 'Management' or \
+        sls['ExtraProperties']['Role'] == 'Application':
 
-    if record['ExtraProperties']['SubRole'] == 'UAN':
-        hmn_xname = record['Parent']
-        nmn_xname = record['Xname']
+        hmn_xname = sls['Parent']
+        nmn_xname = sls['Xname']
 
-        for lease in kea_leases:
-            # Skip leases without hostnames
-            if lease['hostname'] == '':
+        for hsm in hsm_records:
+            # Skip records without 
+            if hsm['ComponentID'] == '' or hsm['IPAddress'] == '':
                 continue
 
             # Get the HMN IP address
-            if lease['hostname'] == hmn_xname:
-                for alias in record['ExtraProperties']['Aliases']:
+            if hsm['ComponentID'] == hmn_xname:
+                for alias in sls['ExtraProperties']['Aliases']:
                     mgmt_alias = alias + '-mgmt'
-                    print('    New CNAME record  {}'.format({'hostname': mgmt_alias, 'ip-address': lease['ip-address']}))
-                    print('        Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
-                    new_records.append({'hostname': mgmt_alias, 'ip-address': lease['ip-address']})
+                    print('New CNAME record  {}'.format({'hostname': mgmt_alias, 'ip-address': hsm['IPAddress']}))
+                    new_records.append({'hostname': mgmt_alias, 'ip-address': hsm['IPAddress']})
 
             # Get the NMN IP address
-            if lease['hostname'] == nmn_xname:
-                for alias in record['ExtraProperties']['Aliases']:
-                    print('    New CNAME record  {}'.format({'hostname': alias, 'ip-address': lease['ip-address']}))
-                    print('        Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
-                    new_records.append({'hostname': alias, 'ip-address': lease['ip-address']})
+            if hsm['ComponentID'] == nmn_xname:
+                for alias in sls['ExtraProperties']['Aliases']:
+                    nmn_alias = alias + '-nmn'
+                    print('New CNAME record  {}'.format({'hostname': nmn_alias, 'ip-address': hsm['IPAddress']}))
+                    new_records.append({'hostname': nmn_alias, 'ip-address': hsm['IPAddress']})
 
 #
-# Merge SLS UAI CNAMES with Kea leases nid-names.  kea_leases is SoR
+# Merge SLS CNAMES with Kea leases.  Keep kea_leases as SoR.
 #
 kea_leases.extend(new_records)
 
