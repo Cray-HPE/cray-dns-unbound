@@ -66,9 +66,18 @@ if kea_return_code != 0:
     print('    Data       : {}'.format(kea_response_json))
     raise SystemExit()
 
+# Make sure that Kea is actually returning some leases!
+if 'arguments' not in kea_response_json[0] or \
+    'Dhcp4' not in kea_response_json[0]['arguments'] or \
+    'reservations' not in kea_response_json[0]['arguments']['Dhcp4']:
+    print('Error:  Kea API returned successfully, but with no leases.')
+    print('        Return code: {}'.format(kea_return_code))
+    print('        Return data: {}'.format(kea_response_json[0]['arguments']['Dhcp4']))
+    sys.exit()
+
 print('Got Kea leases successfully!')
 
-# A main data structure used later
+# Kea Leases is a main data structure used later.
 kea_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
 
 
