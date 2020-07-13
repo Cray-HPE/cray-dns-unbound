@@ -4,6 +4,8 @@ global:
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
+dockerKubectlTag: 0.2.0-20200421212755_170bb37
+
 replicaCount: 2
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
