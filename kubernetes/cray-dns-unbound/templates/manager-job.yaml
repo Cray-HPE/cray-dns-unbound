@@ -17,14 +17,14 @@ spec:
       serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
       containers:
         - name: job-deleter
-          image: {{ include "cray-dns-unbound.image-prefix" .Values }}loftsman/docker-kubectl:{{ .Values.dockerKubectlTag }}"
+          image: {{ include "cray-dns-unbound.image-prefix" .Values }}loftsman/docker-kubectl:{{ .Values.dockerKubectlTag }}
           command:
           - /bin/sh
           - -c
           - set -x;
             echo "Deleting cray-dns-unbound-manager Job";
             kubectl -n services delete cronjob cray-dns-unbound-manager;
-            while [ "kubectl -n services get pods |grep cray-dns-unbound-manager|wc -l" > 0 ];
+            while [ "kubectl -n services get pods |grep cray-dns-unbound-manager|wc -l" -gt 0 ];
             do
               echo "Waiting for cronjob {{ template "cray-dns-unbound.fullname" . }}-manager to be deleted...";
               sleep 5;
