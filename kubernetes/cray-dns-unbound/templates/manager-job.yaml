@@ -1,43 +1,12 @@
 ---
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: {{ template "cray-dns-unbound.fullname" . }}-manager-job-deleter
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    "helm.sh/hook-weight": "0"
-spec:
-  template:
-    metadata:
-      annotations:
-        sidecar.istio.io/inject: “false”
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
-      containers:
-        - name: job-deleter
-          image: {{ include "cray-dns-unbound.image-prefix" .Values }}loftsman/docker-kubectl:{{ .Values.dockerKubectlTag }}
-          command:
-          - /bin/sh
-          - -c
-          - set -x;
-            echo "Deleting cray-dns-unbound-manager Job";
-            kubectl -n services delete cronjob cray-dns-unbound-manager;
-            while [ "kubectl -n services get pods |grep cray-dns-unbound-manager|wc -l" -gt 0 ];
-            do
-              echo "Waiting for cronjob {{ template "cray-dns-unbound.fullname" . }}-manager to be deleted...";
-              sleep 5;
-            done;
-            echo "Old cray-dns-unbound-manager job deleted.";
-            exit 0
----
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: {{ template "cray-dns-unbound.fullname" . }}-manager
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    release/revision: "{{ .Release.Revision }}"
 spec:
   {{ with .Values.mgrJob.schedule -}}
   schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
