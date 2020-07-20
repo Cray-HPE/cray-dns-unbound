@@ -5,6 +5,8 @@ metadata:
   name: {{ template "cray-dns-unbound.fullname" . }}-manager
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    release/revision: "{{ .Release.Revision }}"
 spec:
   {{ with .Values.mgrJob.schedule -}}
   schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
