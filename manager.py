@@ -7,59 +7,80 @@ import requests
 import time
 import shared
 
+#
+# Pretty print errors
+#
 def on_error(err, exit=True):
     print('Error: {}'.format(err))
     if exit:
-        sys.exit()
+        sys.exit(1)
+
+#
+# Remote calls to Kea, HSM and SLS with wrapper for retry and exceptions
+#
+def remote_request(remote_type ,remote_url, headers=None, data=None):
+    connection_retries = 0
+    max_connection_retries = 10
+    wait_seconds_between_retries = 3
+
+    remote_response = None
+    while True:
+        try:
+            json_data = json.dumps(data)
+            response = requests.request(remote_type,
+                                        url = remote_url,
+                                        headers = headers,
+                                        data = json_data)
+            response.raise_for_status()
+            remote_response = response.json()
+            break
+        except Exception as err:
+            connection_retries += 1
+            message = 'Error connecting to {}: {}'.format(remote_url, err)
+            if connection_retries <= max_connection_retries:
+                print('Connection attempt failed: {}'.format(message))
+                print('Retrying connection shortly...')
+                time.sleep(wait_seconds_between_retries)
+                continue
+            else:
+                print(message)
+                raise SystemExit(err)
+    return remote_response
+
+
+#
+# Give istio-proxy channel a chance to be ready
+#
+time.sleep(3)
+
+
+#
+# Master data structure for DNS records which *must* exist
+#
+master_dns_records = []
+
 
 #
 # Query Kea for active server lease information
 #
-time.sleep(3) # a really quick sleep upfront as it'll give our istio-proxy channel out to be ready
-              # better chance for a successful first attempt connecting to Kea through the mesh
 print('Querying Kea in the cluster to find any updated records we need to set')
 
+kea_url = os.environ['KEA_API_ENDPOINT']
+# DEBUG
+# kea_url = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {"Content-Type": "application/json"}
 kea_request = {"command": "config-get", "service": ["dhcp4"]}
 
-# we'll give some time for connection errors to settle, as this job will work within the
-# istio service mesh, and connectivity out through the istio-proxy to kea may take just
-# a few. We'll give it about 30 seconds before we fail hard for the job
-connection_retries = 0
-max_connection_retries = 10
-wait_seconds_between_retries = 3
-while True:
-    try:
-        # Convert explicitly to json to catch errors up front.
-        kea_request_json = json.dumps(kea_request)
-
-        # Call Kea to retrieve active kea_response
-        kea_response = requests.post(url = os.environ['KEA_API_ENDPOINT'],
-                                     headers = kea_headers,
-                                     data = kea_request_json)
-        kea_response.raise_for_status()
-
-        kea_response_json = kea_response.json()
-        break
-    except Exception as err:
-        connection_retries += 1
-        message = 'Error connecting to Kea at {} to get leases: {}'.format(os.environ['KEA_API_ENDPOINT'], err)
-        if connection_retries <= max_connection_retries:
-            print('Kea connection attempt failed: {}'.format(message))
-            print('Retrying connection to Kea shortly...')
-            time.sleep(wait_seconds_between_retries)
-            continue
-        else:
-            print(message)
-            raise SystemExit(err)
-
+kea_response_json = remote_request('POST',
+                                    kea_url,
+                                    headers=kea_headers,
+                                    data=kea_request)
 kea_return_code = kea_response_json[0]['result']
-kea_response_json = kea_response.json()
 
 # It is possible that there are no leases.
 if kea_return_code == 3:
     print('No leases found in Kea, exiting.')
-    sys.exit()
+    sys.exit(1)
 if kea_return_code != 0:
     print('Kea HTTP call success, but error in results:')
     print('    Return code: {}'.format(kea_return_code))
@@ -73,22 +94,38 @@ if 'arguments' not in kea_response_json[0] or \
     print('Error:  Kea API returned successfully, but with no leases.')
     print('        Return code: {}'.format(kea_return_code))
     print('        Return data: {}'.format(kea_response_json[0]['arguments']['Dhcp4']))
-    sys.exit()
+    sys.exit(1)
 
+# Kea leases is generally canonical as to what should exit in DNS
 print('Got Kea leases successfully!')
-
-# Kea Leases is a main data structure used later.
 kea_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
 
 
 #
-# CASMNET-124: nid -> nid-nmn for v1.3 as nid is HSN
-#   TODO - move this to Central DNS after data naming cleanup
+# Load Kea leases into the master data structure with some data cleanup
 #
 for lease in kea_leases:
-    # looking for any name nid###### from Kea (not found = -1)
+    # Some nodes might be in discovery
+    if 'hostname' not in lease or 'ip-address' not in lease:
+        continue
+
+    # Having empty values is a flat out error
+    if not lease['hostname'].strip() or not lease['ip-address'].strip():
+        print('Error: Kea returned lease with incomplete data.  Skipping {}'.format(lease))
+        continue
+
+    # CASMNET-124: change nid to nid-nmn for v1.3 because nid is HSN
+    #   TODO - move this to Central DNS after data naming cleanup
     if lease['hostname'].find('nid') > -1:
-        lease['hostname'] = lease['hostname'] + '-nmn'
+        host = lease['hostname'] + '-nmn'
+        ip = lease['ip-address']
+        master_dns_records.append({'hostname': host, 'ip-address': ip})
+        continue
+
+    # Load remaining leases 
+    host = lease['hostname']
+    ip = lease['ip-address']
+    master_dns_records.append({'hostname': host, 'ip-address': ip})
 
 
 #
@@ -108,60 +145,42 @@ print('Querying HSM to find any xname records we need to set')
 #   }
 # ]
 hsm_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
-connection_retries = 0
-max_connection_retries = 10
-wait_seconds_between_retries = 3
-while True:
-    try:
-        hsm_response = requests.get(url=hsm_request)
-        hsm_response.raise_for_status()
-        break
-    except Exception as err:
-        connection_retries += 1
-        message = 'Error connecting to HSM at {} to get xnames: {}'.format(hsm_request, err)
-        if connection_retries <= max_connection_retries:
-            print('{}, retrying shortly...'.format(message))
-            time.sleep(wait_seconds_between_retries)
-            continue
-        else:
-            print(message)
-            # Consider this a fatal exception currently to keep all records in sync
-            # TODO - should this be non-fatal to allow A-record changes?
-            raise SystemExit(err)
-hsm_records = hsm_response.json()
+hsm_records = remote_request('GET', hsm_request)
 
 
 #
 # Find CNAME records in HSM
 #
-print('Merging new HSM xnames into Kea lease data structure')
+print('Merging new HSM xnames into DNS data structure')
 new_records = []
-for lease in kea_leases:
-    # Skip leases with missing data
-    if 'hostname' not in lease or 'ip-address' not in lease:
-        continue
-
+for dns in master_dns_records:
     # Not all records in HSM are desired, only those with matching
     # IP addresses and different hostnames - resulting in CNAMES.
-    for record in hsm_records:
+    for hsm in hsm_records:
         # Skip records without data
-        if 'IPAddress' not in record or 'ComponentID' not in record:
+        if 'IPAddress' not in hsm or 'ComponentID' not in hsm:
+            continue
+
+        # Skip records with blank data
+        if not hsm['IPAddress'].strip() or not hsm['ComponentID'].strip():
             continue
 
         # Skip records with same hostname (expected HSM/Kea duplicates)
-        if record['ComponentID'] == lease['hostname']:
+        if hsm['ComponentID'] == dns['hostname']:
             break
 
-        if record['IPAddress'] == lease['ip-address']:
-            print('    New CNAME record  {}'.format({'hostname': record['ComponentID'], 'ip-address': record['IPAddress']}))
-            print('        Existing A record {}'.format({'hostname': lease['hostname'], 'ip-address': lease['ip-address']}))
-            new_records.append({'hostname': record['ComponentID'], 'ip-address': record['IPAddress']})
+        if hsm['IPAddress'] == dns['ip-address']:
+            new_record = {'hostname': hsm['ComponentID'], 'ip-address': hsm['IPAddress']}
+            old_record = {'hostname': dns['hostname'], 'ip-address': dns['ip-address']}
+            print('    New CNAME {}'.format(new_record))
+            print('     A record {}'.format(old_record))
+            new_records.append(new_record)
             break
 
 #
-# Merge HSM xnames/CNAMES with Kea lease nid-names.  kea_leases is SoR
+# Merge HSM xnames/CNAMES with DNS nid-names.  Kea is generally is SoR
 #
-kea_leases.extend(new_records)
+master_dns_records.extend(new_records)
 
 
 #
@@ -187,34 +206,14 @@ print('Querying SLS to find Management and Application records')
 #   }
 # }
 sls_request = 'http://cray-sls/v1/hardware'
-connection_retries = 0
-max_connection_retries = 10
-wait_seconds_between_retries = 3
-while True:
-    try:
-        sls_response = requests.get(url=sls_request)
-        sls_response.raise_for_status()
-        break
-    except Exception as err:
-        connection_retries += 1
-        message = 'Error connecting to SLS at {} to get records: {}'.format(sls_request, err)
-        if connection_retries <= max_connection_retries:
-            print('{}, retrying shortly...'.format(message))
-            time.sleep(wait_seconds_between_retries)
-            continue
-        else:
-            print(message)
-            # Consider this a fatal exception currently to keep all records in sync
-            # TODO - should this be non-fatal to allow A-record changes?
-            raise SystemExit(err)
-sls_records = sls_response.json()
+sls_records = remote_request('GET', sls_request)
 
 #
 # Find UAN and Manager/Worker CNAME records in SLS.
 # NOTE:  This is the one place where we are NOT using Kea as SoR because
 #        NCNs currently are NOT dynamic/DHCP.
 #
-print('Merging new SLS Application and Management names into lease data structure')
+print('Merging new SLS Application and Management names into DNS data structure')
 new_records = []
 # Not all records in SLS are desired, only those with xnames
 # where the SubRole is UAN.
@@ -232,28 +231,47 @@ for sls in sls_records:
         nmn_xname = sls['Xname']
 
         for hsm in hsm_records:
-            # Skip records without 
-            if hsm['ComponentID'] == '' or hsm['IPAddress'] == '':
+            # Skip records with blank entries
+            if not hsm['ComponentID'].strip() or not hsm['IPAddress'].strip():
                 continue
 
             # Get the HMN IP address
             if hsm['ComponentID'] == hmn_xname:
                 for alias in sls['ExtraProperties']['Aliases']:
                     mgmt_alias = alias + '-mgmt'
-                    print('New CNAME record  {}'.format({'hostname': mgmt_alias, 'ip-address': hsm['IPAddress']}))
-                    new_records.append({'hostname': mgmt_alias, 'ip-address': hsm['IPAddress']})
+                    new_record = {'hostname': mgmt_alias, 'ip-address': hsm['IPAddress']}
+                    old_record = {'hostname': hmn_xname, 'ip-address': hsm['IPAddress']}
+                    print('    New CNAME {}'.format(new_record))
+                    print('     A record {}'.format(old_record))
+                    new_records.append(new_record)
 
             # Get the NMN IP address
             if hsm['ComponentID'] == nmn_xname:
                 for alias in sls['ExtraProperties']['Aliases']:
                     nmn_alias = alias + '-nmn'
-                    print('New CNAME record  {}'.format({'hostname': nmn_alias, 'ip-address': hsm['IPAddress']}))
-                    new_records.append({'hostname': nmn_alias, 'ip-address': hsm['IPAddress']})
+                    new_record = {'hostname': nmn_alias, 'ip-address': hsm['IPAddress']}
+                    old_record = {'hostname': nmn_xname, 'ip-address': hsm['IPAddress']}
+                    print('    New CNAME {}'.format(new_record))
+                    print('     A record {}'.format(old_record))
+                    new_records.append(new_record)
 
 #
-# Merge SLS CNAMES with Kea leases.  Keep kea_leases as SoR.
+# Merge SLS CNAMES with DNS records.
+# This is the one place Kea is not SoR.
 #
-kea_leases.extend(new_records)
+master_dns_records.extend(new_records)
+
+
+# DEBUG
+# print(len(master_dns_records))
+# f = open('/etc/unbound/records.json')
+# existing_records = json.load(f)
+# print(len(existing_records))
+# diffs = [val for val in master_dns_records + existing_records \
+#     if val not in master_dns_records or val not in existing_records]
+# print(diffs)
+# print(len(diffs))
+# END DEBUG
 
 
 #
@@ -264,39 +282,20 @@ output = shared.run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNET
     os.environ['KUBERNETES_NAMESPACE'], '-o', 'jsonpath={.data[\'records\\.json\']}'])
 try:
     # Main data structure used below
-    records = json.loads(output)
+    existing_records = json.loads(output)
 except Exception as err:
     raise SystemExit(err)
 
 
 #
-# Match and update a records found in configmap with Kea DHCP entries
+# Any diff between master records and configmap will trigger a reload.
 #
-print('Comparing values and creating new A records config, if changes detected')
-# Any proper value in dhcp leases that's not in dns is a diff
-# and we will rewrite the config.
-# TODO: do we need to account for leases that are removed from DHCP? If so, that's not addressed here
-diff = False
-for lease in kea_leases:
-    # Ignore any Kea lease that doesn't have both a hostname and IP
-    if 'hostname' not in lease or 'ip-address' not in lease:
-        continue
-    create_new = True
-    for record in records:
-        if lease['hostname'] == record['hostname']:
-            create_new = False
-            if lease['ip-address'] != record['ip-address']:
-                record['ip-address'] = lease['ip-address']
-                diff = True
-                print('    Existing hostname DNS record to update {} {}'.format(lease['hostname'],lease['ip-address']))
-            break
-    if create_new:
-        records.append({'hostname': lease['hostname'], 'ip-address': lease['ip-address']})
-        diff = True
-        print('    New hostname DNS record to add {} {}'.format(lease['hostname'],lease['ip-address']))
+print('Comparing new and existing DNS records.')
+diffs = [val for val in master_dns_records + existing_records \
+    if val not in master_dns_records or val not in existing_records]
 
-if diff is True:
-    print('    Differences found.  Writing new DNS A records configuration to our configmap.')
+if len(diffs) > 0:
+    print('    Differences found.  Writing new DNS records to our configmap.')
     patch_content = '{{"data": {{"records.json": "{}"}}}}'.format(json.dumps(records).replace('"', '\\"'))
     shared.run_command(['kubectl', 'patch', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
         os.environ['KUBERNETES_NAMESPACE'], '-p', patch_content])
