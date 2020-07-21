@@ -65,9 +65,9 @@ master_dns_records = []
 #
 print('Querying Kea in the cluster to find any updated records we need to set')
 
-#kea_url = os.environ['KEA_API_ENDPOINT']
-# TESTING
-kea_url = 'http://cray-dhcp-kea-api:8000'
+kea_url = os.environ['KEA_API_ENDPOINT']
+# DEBUG
+# kea_url = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {"Content-Type": "application/json"}
 kea_request = {"command": "config-get", "service": ["dhcp4"]}
 
