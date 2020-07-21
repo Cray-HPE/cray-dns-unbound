@@ -3,9 +3,11 @@
 import os
 import sys
 import json
+import yaml
 import requests
 import time
 import shared
+from tempfile import NamedTemporaryFile
 
 #
 # Pretty print errors
@@ -278,11 +280,15 @@ master_dns_records.extend(new_records)
 # Load current running DNS entries
 #
 print('Loading current DNS entries from configmap')
-output = shared.run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
-    os.environ['KUBERNETES_NAMESPACE'], '-o', 'jsonpath={.data[\'records\\.json\']}'])
+output = shared.run_command(['kubectl', 'get', 'configmap',
+                             os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'],
+                             '-n', os.environ['KUBERNETES_NAMESPACE'],
+                             '-o', 'yaml'])
 try:
     # Main data structure used below
-    existing_records = json.loads(output)
+    configmap = yaml.load(output, Loader=yaml.FullLoader)
+    configmap['metadata'].pop('annotations', None)
+    existing_records = json.loads(configmap['data']['records.json'])
 except Exception as err:
     raise SystemExit(err)
 
@@ -296,11 +302,22 @@ diffs = [val for val in master_dns_records + existing_records \
 
 if len(diffs) > 0:
     print('    Differences found.  Writing new DNS records to our configmap.')
-    patch_content = '{{"data": {{"records.json": "{}"}}}}'.format(json.dumps(records).replace('"', '\\"'))
-    shared.run_command(['kubectl', 'patch', 'configmap', os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'], '-n',
-        os.environ['KUBERNETES_NAMESPACE'], '-p', patch_content])
+    records_string = json.dumps(records).replace('"', '\"')
+    print("  Records string: '%s'" % records_string)
+    configmap['data']['records.json'] = records_string
+    with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
+        yaml.dump(configmap, tmp, default_flow_style=False)
+        print("  Here is what is in the file to ba applied")
+        shared.run_command(['cat', tmp.name])
+        print("  Applying the configmap")
+        shared.run_command(['kubectl', 'replace',
+                            '--force',
+                            '-f', tmp.name])
+
     print('  Running a rolling restart of the deployment...')
-    shared.run_command(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'], 'rollout', 'restart', 'deployment',
-        os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
+    shared.run_command(['kubectl',
+                        '-n', os.environ['KUBERNETES_NAMESPACE'],
+                        'rollout', 'restart', 'deployment',
+                        os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
 else:
     print('    No differences found.  Skipping DNS update')

@@ -20,7 +20,7 @@ rules:
 - apiGroups: [""]
   resources: ["configmaps"]
   resourceNames: ["{{ template "cray-dns-unbound.fullname" . }}"]
-  verbs: ["get", "patch"]
+  verbs: ["get", "patch", "delete", "create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
