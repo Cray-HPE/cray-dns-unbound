@@ -262,17 +262,16 @@ for sls in sls_records:
 master_dns_records.extend(new_records)
 
 
-# TESTING
-print(len(master_dns_records))
-f = open('/etc/unbound/records.json')
-existing_records = json.load(f)
-print(len(existing_records))
-
-diffs = [val for val in master_dns_records + existing_records \
-    if val not in master_dns_records or val not in existing_records]
-#print(diffs)
-print(len(diffs))
-# END TESTING
+# DEBUG
+# print(len(master_dns_records))
+# f = open('/etc/unbound/records.json')
+# existing_records = json.load(f)
+# print(len(existing_records))
+# diffs = [val for val in master_dns_records + existing_records \
+#     if val not in master_dns_records or val not in existing_records]
+# print(diffs)
+# print(len(diffs))
+# END DEBUG
 
 
 #
