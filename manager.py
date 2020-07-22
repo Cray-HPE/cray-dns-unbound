@@ -286,7 +286,7 @@ except Exception as err:
 
 # ERIC REMOVE THIS TESTING CODE - BEGIN
 kea_leases = []
-for c in range(0, 24):
+for c in range(0, 60):
     for d in range(0, 256):
         lease = {
             'ip-address': "10.1.%d.%d" % (c, d),
@@ -327,12 +327,8 @@ if diff is True:
     configmap['data']['records.json'] = records_string
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
         yaml.dump(configmap, tmp, default_flow_style=False)
-        print("  Here is what is in the file to ba applied")
-        shared.run_command(['cat', tmp.name])
         print("  Applying the configmap")
-        shared.run_command(['kubectl', 'replace',
-                            '--force',
-                            '-f', tmp.name])
+        shared.run_command(['kubectl', 'replace', '-f', tmp.name])
 
     print('  Running a rolling restart of the deployment...')
     shared.run_command(['kubectl',
