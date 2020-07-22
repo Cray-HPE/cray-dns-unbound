@@ -308,7 +308,7 @@ if len(diffs) > 0:
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
         yaml.dump(configmap, tmp, default_flow_style=False)
         print("  Applying the configmap")
-        shared.run_command(['kubectl', 'replace', '-f', tmp.name])
+        shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
     print('  Running a rolling restart of the deployment...')
     shared.run_command(['kubectl',
