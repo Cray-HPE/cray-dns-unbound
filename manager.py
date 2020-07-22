@@ -302,7 +302,7 @@ diffs = [val for val in master_dns_records + existing_records \
 
 if len(diffs) > 0:
     print('    Differences found.  Writing new DNS records to our configmap.')
-    records_string = json.dumps(records).replace('"', '\"')
+    records_string = json.dumps(master_dns_records).replace('"', '\"')
     print("  Records string: '%s'" % records_string)
     configmap['data']['records.json'] = records_string
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
