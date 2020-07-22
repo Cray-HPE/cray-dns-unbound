@@ -7,35 +7,19 @@ metadata:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ template "cray-dns-unbound.fullname" . }}-manager-role
-  labels:
-    {{- include "cray-dns-unbound.labels" . | indent 4 }}
-rules:
-- apiGroups: ["extensions", "apps"]
-  resources: ["deployments"]
-  resourceNames: ["{{ template "cray-dns-unbound.fullname" . }}"]
-  verbs: ["get", "patch"]
-- apiGroups: [""]
-  resources: ["configmaps"]
-  resourceNames: ["{{ template "cray-dns-unbound.fullname" . }}"]
-  verbs: ["get", "patch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: {{ template "cray-dns-unbound.fullname" . }}-manager-role-binding
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
 subjects:
 - kind: ServiceAccount
   name: {{ template "cray-dns-unbound.fullname" . }}-manager
   namespace: {{ .Release.Namespace }}
-roleRef:
-  kind: Role
-  name: {{ template "cray-dns-unbound.fullname" . }}-manager-role
-  apiGroup: rbac.authorization.k8s.io
 
 {{ if .Values.coreDNS.forwardToUnbound -}}
 ---

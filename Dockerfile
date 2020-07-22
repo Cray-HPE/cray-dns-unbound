@@ -9,7 +9,7 @@ RUN echo "http://dl-4.alpinelinux.org/alpine/latest-stable/main/" >> /etc/apk/re
 RUN mv /etc/apk/repositories.bak /etc/apk/repositories
 
 RUN pip3 install --upgrade pip
-RUN pip3 install requests
+RUN pip3 install requests PyYAML
 
 RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.18.3/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
