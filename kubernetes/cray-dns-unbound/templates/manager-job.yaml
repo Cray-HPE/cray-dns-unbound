@@ -16,6 +16,8 @@ spec:
     spec:
       template:
         spec:
+          annotations:
+            release/revision: "{{ .Release.Revision }}"
           restartPolicy: Never
           serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
           containers:
