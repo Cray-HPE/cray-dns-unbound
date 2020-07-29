@@ -7,6 +7,9 @@ metadata:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
   annotations:
     release/revision: "{{ .Release.Revision }}"
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "1"
+    helm.sh/hook-delete-policy: before-hook-creation
 spec:
   {{ with .Values.mgrJob.schedule -}}
   schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
