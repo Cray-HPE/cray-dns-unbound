@@ -46,6 +46,7 @@ helm.sh/chart: {{ include "cray-dns-unbound.chart" . }}
 app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+cronjob-name: {{ template "cray-dns-unbound.fullname" . }}-manager
 {{- end -}}
 
 {{/*
