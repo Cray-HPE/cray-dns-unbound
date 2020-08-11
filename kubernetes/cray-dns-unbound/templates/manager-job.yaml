@@ -15,6 +15,9 @@ spec:
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            cronjob-name: {{ template "cray-dns-unbound.fullname" . }}-manager
         spec:
           restartPolicy: Never
           serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
