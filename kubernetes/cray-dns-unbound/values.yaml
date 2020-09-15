@@ -69,9 +69,14 @@ forwardZones: []
 
 stubZones: []
 
-# Required internally for v1.3 (CASMNET-109)
+# Required "local" resolution internally for v1.3 (CASMNET-109)
+# Assume airgap by default and add root "." resolution locally (CASMNET-309)
+# The following configuration will resolve everything locally and not use
+# upstream DNS or root-hints - thus supporting airgap by default.
 localZones:
   - name: "local"
+    localType: static
+  - name: "."
     localType: static
 
 # Unbound can store DNS records in a "local zone." This facility can be used to
