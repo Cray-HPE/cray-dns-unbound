@@ -251,7 +251,6 @@ sls_request = 'http://cray-sls/v1/hardware'
 sls_records = remote_request('GET', sls_request)
 
 
-
 #
 # Find UAN and Manager/Worker CNAME records in SLS.
 # NOTE:  This is the one place where we are NOT using Kea as SoR because
@@ -344,14 +343,19 @@ for network in sls_networks:
 
         reservations = subnet['IPReservations']
         for reservation in reservations:
-            for alias in reservation['Aliases']:
-                record = { 'hostname': alias, 'ip-address': reservation['IPAddress'] }
+            if 'Name' in reservation and reservation['Name'].strip():
+                # TODO: split this out as A Record in central DNS.
+                record = { 'hostname': reservation['Name'], 'ip-address': reservation['IPAddress'] }
                 static_records.append(record)
+            if 'Alias' in reservation: 
+                for alias in reservation['Aliases']:
+                    # TODO: split this out as a CNAME in central DNS.
+                    record = { 'hostname': alias, 'ip-address': reservation['IPAddress'] }
+                    static_records.append(record)
 
 te = time.perf_counter()
 master_dns_records.extend(static_records)
 print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te-ts))
-
 
 
 
