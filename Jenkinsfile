@@ -6,6 +6,6 @@ dockerBuildPipeline {
     app = "dns-unbound"
     name = "dns-unbound"
     description = "Cray k8s DNS resolver using unbound"
-    product = "shasta-premium,shasta-standard"
+    product = "csm"
     slackNotification = ["", "", false, false, true, false]
 }
