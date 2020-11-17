@@ -347,7 +347,7 @@ for network in sls_networks:
                 # TODO: split this out as A Record in central DNS.
                 record = { 'hostname': reservation['Name'], 'ip-address': reservation['IPAddress'] }
                 static_records.append(record)
-            if 'Alias' in reservation: 
+            if 'Aliases' in reservation: 
                 for alias in reservation['Aliases']:
                     # TODO: split this out as a CNAME in central DNS.
                     record = { 'hostname': alias, 'ip-address': reservation['IPAddress'] }
