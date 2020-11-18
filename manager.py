@@ -92,18 +92,28 @@ if kea_return_code != 0:
 
 # Make sure that Kea is actually returning data!
 if 'arguments' not in kea_response_json[0] or \
-    'Dhcp4' not in kea_response_json[0]['arguments'] or \
-    'reservations' not in kea_response_json[0]['arguments']['Dhcp4']:
+    'Dhcp4' not in kea_response_json[0]['arguments']:
     print('Error:  Kea API returned successfully, but with no leases.')
     print('        Return code: {}'.format(kea_return_code))
     print('        Return data: {}'.format(kea_response_json[0]['arguments']['Dhcp4']))
     sys.exit(1)
 
+
 # Kea leases is generally canonical as to what should exit in DNS
 te = time.perf_counter()
 print('Retrieved Kea data successfully ({0:.5}s)'.format(te-ts))
 
-# This is per-subnet DHCP4 data and must exist.
+
+# Global lease check - non-fatal as of v1.4
+kea_global_leases = []
+if 'reservations' not in kea_response_json[0]['arguments']['Dhcp4']:
+    print('Kea global reservations data is empty: continuing.')
+else:
+    kea_global_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
+    print('Found {} leases and reservations in globals'.format(len(kea_global_leases)))
+
+
+# This is per-subnet DHCP4 data (including local reservations/leases) and must exist.
 if not 'subnet4' in kea_response_json[0]['arguments']['Dhcp4']:
     on_error('Kea Dhcp4 data is empty.')
 
@@ -125,14 +135,6 @@ for subnet in kea_subnets:
 
 te = time.perf_counter()
 print('Found {0} leases and reservations in subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
-
-
-# Global Kea leases/reservations - can also be per-subnet, but globals may always
-# hold prescribed leases which have a host and MAC, but no prescribed IP.
-if not 'reservations' in kea_response_json[0]['arguments']['Dhcp4']:
-    on_error('Kea global reservations not found: non-fatal, continuing.', exit=False)
-kea_global_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
-print('Found {} leases and reservations in globals'.format(len(kea_global_leases)))
 
 
 #
