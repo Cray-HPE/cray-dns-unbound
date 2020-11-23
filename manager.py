@@ -343,11 +343,14 @@ for network in sls_networks:
         if not 'IPReservations' in subnet:
             continue
 
+        subdomain = network['Name'].lower()
         reservations = subnet['IPReservations']
         for reservation in reservations:
             if 'Name' in reservation and reservation['Name'].strip():
                 # TODO: split this out as A Record in central DNS.
-                record = { 'hostname': reservation['Name'], 'ip-address': reservation['IPAddress'] }
+                # NOTE: append subdomain to A Record to enforce part of DNS hierarchy.
+                record = { 'hostname': '{}.{}'.format(reservation['Name'],subdomain),   
+                           'ip-address': reservation['IPAddress'] }
                 static_records.append(record)
             if 'Aliases' in reservation: 
                 for alias in reservation['Aliases']:
