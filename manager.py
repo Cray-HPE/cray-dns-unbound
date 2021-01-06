@@ -352,6 +352,13 @@ for network in sls_networks:
                 record = { 'hostname': '{}.{}'.format(reservation['Name'],subdomain),   
                            'ip-address': reservation['IPAddress'] }
                 static_records.append(record)
+
+                # CASMNET-379 - default no subdomain requests to NMN.  This needs to
+                # be removed when the full domain hierarchy is put into place.
+                if subdomain == 'nmn':
+                    record = { 'hostname': '{}'.format(reservation['Name']),   
+                               'ip-address': reservation['IPAddress'] }
+                    static_records.append(record)
             if 'Aliases' in reservation: 
                 for alias in reservation['Aliases']:
                     # TODO: split this out as a CNAME in central DNS.
