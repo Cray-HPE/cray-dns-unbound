@@ -13,15 +13,17 @@ from tempfile import NamedTemporaryFile
 #
 # Pretty print errors
 #
-def on_error(err, exit=True):
-    print('Error: {}'.format(err))
+def on_error(err, exit=False):
     if exit:
+        print('ERROR: {}'.format(err))
         sys.exit(1)
+    else:
+        print('NOTICE: {}'.format(err))
 
 #
 # Remote calls to Kea, SMD and SLS with wrapper for retry and exceptions
 #
-def remote_request(remote_type ,remote_url, headers=None, data=None):
+def remote_request(remote_type ,remote_url, headers=None, data=None, exit_on_error=False):
     connection_retries = 0
     max_connection_retries = 10
     wait_seconds_between_retries = 3
@@ -39,17 +41,55 @@ def remote_request(remote_type ,remote_url, headers=None, data=None):
             break
         except Exception as err:
             connection_retries += 1
-            message = 'Error connecting to {}: {}'.format(remote_url, err)
+            message = 'remote call to {}: {}'.format(remote_url, err)
             if connection_retries <= max_connection_retries:
-                print('Connection attempt failed: {}'.format(message))
-                print('Retrying connection shortly...')
+                on_error('failed connection attempt in {}'.format(message))
+                on_error('    retrying connection shortly...')
                 time.sleep(wait_seconds_between_retries)
                 continue
+
+            on_error('exception in {}'.format(message))
+            if exit_on_error:
+                raise SystemExit(err) # Allow the exception to bubble up.
             else:
-                print(message)
-                raise SystemExit(err)
+                remote_response = []
+                break
+
     return remote_response
 
+
+#
+# Perform Kea error checking and and data validation.
+#
+def get_kea_records(kea_response_json):
+    kea_records = None
+
+    # Data check: because of an exception we may have an empty list
+    # Create a stub record
+    if not kea_response_json:
+        kea_response_json.append({'result': None, 'arguments': {'Dhcp4': []}})
+
+    # Check Kea return codes. (Kea codes are 0,1,2,3)
+    kea_return_code = kea_response_json[0]['result']
+    if kea_return_code != 0:
+        on_error('Kea response contains error in results code:')
+        on_error('    results code: {}'.format(kea_return_code))
+        if not kea_return_code:
+            on_error('    exception in call to Kea')
+        if kea_return_code == 3:
+            on_error('    no leases found in Kea')
+
+    # Make sure that Kea is actually returning data!
+    if 'arguments' not in kea_response_json[0] or \
+        'Dhcp4' not in kea_response_json[0]['arguments']:
+        on_error('Kea API returned successfully, but with no leases.')
+        on_error('    return code: {}'.format(kea_return_code))
+        on_error('    return data: {}'.format(kea_response_json))
+        kea_records = {'result': None, 'arguments': {'Dhcp4': []}}
+    else:
+        kea_records = kea_response_json[0]['arguments']['Dhcp4']
+
+    return kea_records
 
 #
 # Give istio-proxy channel a chance to be ready
@@ -70,7 +110,7 @@ print('Querying Kea in the cluster to find any updated records we need to set')
 ts = time.perf_counter()
 kea_url = os.environ['KEA_API_ENDPOINT']
 # DEBUG
-# kea_url = 'http://cray-dhcp-kea-api:8000'
+#kea_url = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {"Content-Type": "application/json"}
 kea_request = {"command": "config-get", "service": ["dhcp4"]}
 
@@ -78,44 +118,22 @@ kea_response_json = remote_request('POST',
                                     kea_url,
                                     headers=kea_headers,
                                     data=kea_request)
-kea_return_code = kea_response_json[0]['result']
 
-# It is possible that there are no leases.
-if kea_return_code == 3:
-    print('No leases found in Kea, exiting.')
-    sys.exit(1)
-if kea_return_code != 0:
-    print('Kea HTTP call success, but error in results:')
-    print('    Return code: {}'.format(kea_return_code))
-    print('    Data       : {}'.format(kea_response_json))
-    raise SystemExit()
+# Retrieve cleansed records that are pointing to the correct location
+kea_records = get_kea_records(kea_response_json)
 
-# Make sure that Kea is actually returning data!
-if 'arguments' not in kea_response_json[0] or \
-    'Dhcp4' not in kea_response_json[0]['arguments']:
-    print('Error:  Kea API returned successfully, but with no leases.')
-    print('        Return code: {}'.format(kea_return_code))
-    print('        Return data: {}'.format(kea_response_json[0]['arguments']['Dhcp4']))
-    sys.exit(1)
-
-
-# Kea leases is generally canonical as to what should exit in DNS
+# Kea leases or generally canonical as to what should exist in DNS
 te = time.perf_counter()
-print('Retrieved Kea data successfully ({0:.5}s)'.format(te-ts))
+print('Retrieved Kea data ({0:.5}s)'.format(te-ts))
 
 
-# Global lease check - non-fatal as of v1.4
+# Global lease check - non-fatal in v1.4
 kea_global_leases = []
-if 'reservations' not in kea_response_json[0]['arguments']['Dhcp4']:
-    print('Kea global reservations data is empty: continuing.')
+if 'reservations' not in kea_records:
+    on_error('Kea global reservations data is empty')
 else:
-    kea_global_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
-    print('Found {} leases and reservations in globals'.format(len(kea_global_leases)))
-
-
-# This is per-subnet DHCP4 data (including local reservations/leases) and must exist.
-if not 'subnet4' in kea_response_json[0]['arguments']['Dhcp4']:
-    on_error('Kea Dhcp4 data is empty.')
+    kea_global_leases = kea_records['reservations']
+    print('Found {} leases and reservations in Kea globals'.format(len(kea_global_leases)))
 
 
 #
@@ -124,7 +142,13 @@ if not 'subnet4' in kea_response_json[0]['arguments']['Dhcp4']:
 #
 ts = time.perf_counter()
 kea_local_leases = []
-kea_subnets = kea_response_json[0]['arguments']['Dhcp4']['subnet4']
+kea_subnets = []
+if not 'subnet4' in kea_records:
+    on_error('Kea Dhcp4 lease and reservation data is empty')
+else:
+    kea_subnets = kea_records['subnet4']
+    print('Found {} subnets in Kea'.format(len(kea_subnets)))
+
 for subnet in kea_subnets:
     if 'reservations' not in subnet:
         continue
@@ -134,7 +158,7 @@ for subnet in kea_subnets:
         kea_local_leases.append(record)
 
 te = time.perf_counter()
-print('Found {0} leases and reservations in subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
+print('Found {0} leases and reservations in Kea local subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
 
 
 #
@@ -146,9 +170,9 @@ for lease in kea_local_leases + kea_global_leases:
     if 'hostname' not in lease or 'ip-address' not in lease:
         continue
 
-    # Having empty values is a flat out error
+    # Having empty values is an error
     if not lease['hostname'].strip() or not lease['ip-address'].strip():
-        on_error('Kea returned lease with incomplete data: non-fatal, continuing {}'.format(lease), exit=False)
+        on_error('Kea returned lease with incomplete data, continuing {}'.format(lease))
         continue
 
     # CASMNET-124: change nid to nid-nmn for v1.3 because nid is HSN
@@ -188,6 +212,7 @@ smd_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
 smd_records = remote_request('GET', smd_request)
 te = time.perf_counter()
 print('Queried SMD to find any xname records we need to set ({0:.5f}s)'.format(te-ts))
+print('Found {} records in SMD'.format(len(smd_records)))
 
 
 #
@@ -218,6 +243,7 @@ for dns in master_dns_records:
             #print('     A record {}'.format(old_record))
             new_records.append(new_record)
             break
+
 
 #
 # Merge SMD xnames/CNAMES with DNS nid-names.  Kea is generally is SoR
@@ -301,7 +327,7 @@ for sls in sls_records:
 
 te = time.perf_counter()
 print('Queried SLS to find Management and Application records ({0:.5f})'.format(te-ts))
-
+print('Found {} SLS Hardware records.'.format(len(sls_records)))
 
 
 #
@@ -312,7 +338,6 @@ master_dns_records.extend(new_records)
 print('Merged new SLS Application and Management names into DNS data structure')
 
 
-
 #
 # v1.4+:  Retrieve network structures
 #
@@ -321,6 +346,7 @@ sls_request = 'http://cray-sls/v1/networks'
 sls_networks = remote_request('GET', sls_request)
 te = time.perf_counter()
 print('Queried SLS to find Network records ({0:.5f})'.format(te-ts))
+print('Found {} SLS Network records.'.format(len(sls_networks)))
 
 
 #
@@ -362,13 +388,14 @@ for network in sls_networks:
             if 'Aliases' in reservation: 
                 for alias in reservation['Aliases']:
                     # TODO: split this out as a CNAME in central DNS.
+                    if not alias:
+                        continue
                     record = { 'hostname': alias, 'ip-address': reservation['IPAddress'] }
                     static_records.append(record)
 
 te = time.perf_counter()
 master_dns_records.extend(static_records)
 print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te-ts))
-
 
 
 #
