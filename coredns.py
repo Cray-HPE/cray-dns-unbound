@@ -21,7 +21,7 @@ while True:
         corefile = shared.run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNETES_COREDNS_CONFIGMAP_NAME'], '-n',
             os.environ['KUBERNETES_COREDNS_NAMESPACE'], '-o', 'jsonpath={.data[\'Corefile\']}'])
         break
-    except Exception as err:
+    except BaseException as err:
         connection_retries += 1
         message = 'Error connecting to Kubernetes API: {}'.format(err)
         if connection_retries <= max_connection_retries:
