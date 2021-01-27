@@ -2,12 +2,13 @@
 # Copyright 2014-2020 Hewlett Packard Enterprise Development LP
 
 import os
+import re
 import sys
 import json
 import yaml
-import requests
 import time
 import shared
+import requests
 from tempfile import NamedTemporaryFile
 
 #
@@ -280,10 +281,12 @@ sls_records = remote_request('GET', sls_request)
 
 
 #
-# Find UAN and Manager/Worker CNAME records in SLS.
+# 1. CASMINST-1114 PART1: Find nid names that are in kea and associate with their xname.
+# 2. Find UAN and Manager/Worker CNAME records in SLS.
 # NOTE:  This is the one place where we are NOT using Kea as SoR because
 #        NCNs currently are NOT dynamic/DHCP.
 #
+nid_records = []
 new_records = []
 # Not all records in SLS are desired, only those with xnames
 # where the SubRole is UAN.
@@ -293,6 +296,16 @@ for sls in sls_records:
         'Role' not in sls['ExtraProperties'] or \
         'Aliases' not in sls['ExtraProperties']:
         continue
+
+    # Assemble nid name / xname correlation for HSN records later
+    # TODO: move this correlation around in Central DNS
+    for dns in master_dns_records:
+        if dns['hostname'].find('nid') > -1:
+            if dns['hostname'].replace('-nmn','') not in sls['ExtraProperties']['Aliases']:
+                continue
+            nidname = dns['hostname'].replace('-nmn','')
+            xname = sls['Xname']
+            nid_records.append({'nidname': nidname,'xname': xname})
 
     if sls['ExtraProperties']['Role'] == 'Management' or \
         sls['ExtraProperties']['Role'] == 'Application':
@@ -311,8 +324,6 @@ for sls in sls_records:
                     mgmt_alias = alias + '-mgmt'
                     new_record = {'hostname': mgmt_alias, 'ip-address': smd['IPAddress']}
                     old_record = {'hostname': hmn_xname, 'ip-address': smd['IPAddress']}
-                    #print('    New CNAME {}'.format(new_record))
-                    #print('     A record {}'.format(old_record))
                     new_records.append(new_record)
 
             # Get the NMN IP address
@@ -321,12 +332,10 @@ for sls in sls_records:
                     nmn_alias = alias + '-nmn'
                     new_record = {'hostname': nmn_alias, 'ip-address': smd['IPAddress']}
                     old_record = {'hostname': nmn_xname, 'ip-address': smd['IPAddress']}
-                    #print('    New CNAME {}'.format(new_record))
-                    #print('     A record {}'.format(old_record))
                     new_records.append(new_record)
 
 te = time.perf_counter()
-print('Queried SLS to find Management and Application records ({0:.5f})'.format(te-ts))
+print('Queried SLS to find Management, Application and HSN nid records ({0:.5f})'.format(te-ts))
 print('Found {} SLS Hardware records.'.format(len(sls_records)))
 
 
@@ -355,6 +364,7 @@ print('Found {} SLS Network records.'.format(len(sls_networks)))
 #        proper CNAMES
 #
 ts = time.perf_counter()
+hsn_matches = 0
 static_records = []
 for network in sls_networks:
     if not 'ExtraProperties' in network:
@@ -393,9 +403,35 @@ for network in sls_networks:
                     record = { 'hostname': alias, 'ip-address': reservation['IPAddress'] }
                     static_records.append(record)
 
+            # CASMINST-1114 PART 2: nid aliases for HSN xname records.
+            # TODO: This needs to be done differently in central DNS.
+            # Three records per: nid002023 x1003c7s7b1n1h0 nid002023-hsn0      
+            # Operate only on xnames
+            if reservation['Name'][0] == 'x':
+                reservation_xname = re.sub('h\d+$','',reservation['Name']) # remove port
+                reservation_xname = re.sub('([a-z])0+([0-9]+[a-z])',r'\1\2', reservation_xname) # zero padding
+                for nid in nid_records:
+                    if nid['xname'] == reservation_xname:
+                        hsn_matches += 1
+
+                        ipv4 = reservation['IPAddress']
+                        record = {'hostname': nid['nidname'], 'ip-address': ipv4}
+                        static_records.append(record)
+
+                        port = re.sub('^(.*)h(\d+)$',r'\2',reservation['Name'])
+                        record = {'hostname': nid['nidname']+'-hsn'+port, 'ip-address': ipv4}
+                        static_records.append(record)
+
+                        record = {'hostname': reservation['Name'], 'ip-address': ipv4}
+                        static_records.append(record)
+                
+
 te = time.perf_counter()
 master_dns_records.extend(static_records)
 print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te-ts))
+
+print('Found {} compute node nid definitions in SLS hardware'.format(len(nid_records)))
+print('Matched {} compute node nid definitions in SLS network reservations'.format(hsn_matches))
 
 
 #
