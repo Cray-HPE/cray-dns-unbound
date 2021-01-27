@@ -438,7 +438,7 @@ print('Matched {} compute node nid definitions in SLS network reservations'.form
 # Load current running DNS entries
 #
 ts = time.perf_counter()
-output = shared.run_command(['kubectl', 'get', 'configmap', 
+output = shared.run_command(['kubectl', 'get', 'configmap',
                              os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'],
                              '-n', os.environ['KUBERNETES_NAMESPACE'],
                              '-o', 'yaml'])
