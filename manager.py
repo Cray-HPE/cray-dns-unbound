@@ -409,7 +409,7 @@ for network in sls_networks:
             # Operate only on xnames
             if reservation['Name'][0] == 'x':
                 reservation_xname = re.sub('h\d+$','',reservation['Name']) # remove port
-                reservation_xname = re.sub('([a-z])0([0-9]+[a-z])',r'\1\2', reservation_xname) # zero padding
+                reservation_xname = re.sub('([a-z])0+([0-9]+[a-z])',r'\1\2', reservation_xname) # zero padding
                 for nid in nid_records:
                     if nid['xname'] == reservation_xname:
                         hsn_matches += 1
