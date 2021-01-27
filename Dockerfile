@@ -2,7 +2,7 @@ FROM dtr.dev.cray.com/baseos/alpine:3.12
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
-RUN apk add --no-cache bash python3 py-pip unbound
+RUN apk add --no-cache bash python3 py-pip unbound=1.10.1-r0
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
