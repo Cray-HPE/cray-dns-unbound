@@ -1,12 +1,8 @@
-FROM alpine:3.12
+FROM dtr.dev.cray.com/baseos/alpine:3.12
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
-RUN apk add --no-cache bash python3 py-pip
-RUN cp /etc/apk/repositories /etc/apk/repositories.bak
-RUN echo "http://dl-4.alpinelinux.org/alpine/latest-stable/main/" >> /etc/apk/repositories && \
-    apk add --no-cache unbound
-RUN mv /etc/apk/repositories.bak /etc/apk/repositories
+RUN apk add --no-cache bash python3 py-pip unbound
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
