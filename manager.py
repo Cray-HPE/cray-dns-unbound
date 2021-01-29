@@ -379,12 +379,12 @@ for network in sls_networks:
         if not 'IPReservations' in subnet:
             continue
 
-        subdomain = network['Name'].lower()
+        subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN)_.*$',r'\1',network['Name']).lower() 
         reservations = subnet['IPReservations']
         for reservation in reservations:
             if 'Name' in reservation and reservation['Name'].strip():
                 # TODO: split this out as A Record in central DNS.
-                # NOTE: append subdomain to A Record to enforce part of DNS hierarchy.
+                # NOTE: APPEND SUBDOMAIN to A Record to enforce part of DNS hierarchy.
                 record = { 'hostname': '{}.{}'.format(reservation['Name'],subdomain),   
                            'ip-address': reservation['IPAddress'] }
                 static_records.append(record)
