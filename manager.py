@@ -352,7 +352,7 @@ print('Merged new SLS Application and Management names into DNS data structure')
 #
 ts = time.perf_counter()
 sls_request = 'http://cray-sls/v1/networks'
-sls_networks = remote_request('GET', sls_request)
+sls_networks = remote_request('GET', sls_request, exit_on_error=True)
 te = time.perf_counter()
 print('Queried SLS to find Network records ({0:.5f})'.format(te-ts))
 print('Found {} SLS Network records.'.format(len(sls_networks)))
