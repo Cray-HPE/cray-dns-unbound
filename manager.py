@@ -8,6 +8,7 @@ import gzip
 import json
 import yaml
 import time
+import codecs
 import shared
 import requests
 from tempfile import NamedTemporaryFile
