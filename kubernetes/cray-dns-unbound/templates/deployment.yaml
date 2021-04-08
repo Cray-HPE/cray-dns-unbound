@@ -50,8 +50,8 @@ spec:
           mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
           subPath: unbound.conf
         - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}/records.json"
-          subPath: records.json
+          mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
+          subPath: records.json.gz
         livenessProbe:
           exec:
             command:
@@ -75,8 +75,8 @@ spec:
           items:
           - key: unbound.conf
             path: unbound.conf
-          - key: records.json
-            path: records.json
+          - key: records.json.gz
+            path: records.json.gz
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

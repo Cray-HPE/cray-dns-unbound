@@ -4,6 +4,7 @@
 import os
 import re
 import sys
+import gzip
 import json
 import yaml
 import time
@@ -446,11 +447,16 @@ try:
     # Main data structure used below
     configmap = yaml.load(output, Loader=yaml.FullLoader)
     configmap['metadata'].pop('annotations', None)
-    existing_records = json.loads(configmap['data']['records.json'])
+
+    # Read in base64 encoded and gzip'd records
+    configmap_records = configmap['binaryData']['records.json.gz']
+    configmap_records = codecs.decode(configmap_records, encoding='base64')
+    configmap_records = gzip.decompress(configmap_records)
+    existing_records = json.loads(configmap_records)
 except Exception as err:
     raise SystemExit(err)
 # DEBUG
-#f = open('/etc/unbound/records.json')
+#f = gzip.open('/etc/unbound/records.json.gz')
 #existing_records = json.load(f)
 te = time.perf_counter()
 print('Loaded current DNS entries from configmap ({0:.5}s)'.format(te-ts))
@@ -473,7 +479,8 @@ if len(diffs) > 0:
     ts = time.perf_counter()
     print('    Differences found.  Writing new DNS records to our configmap.')
     records_string = json.dumps(master_dns_records).replace('"', '\"')
-    configmap['data']['records.json'] = records_string
+    records_string = gzip.compress(records_string)
+    configmap['binaryData']['records.json.gz'] = records_string
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
         yaml.dump(configmap, tmp, default_flow_style=False)
         print("  Applying the configmap")
