@@ -451,6 +451,7 @@ try:
 
     # Read in base64 encoded and gzip'd records
     configmap_records = configmap['binaryData']['records.json.gz']
+    configmap_records = codecs.encode(configmap_records, encoding='utf-8')
     configmap_records = codecs.decode(configmap_records, encoding='base64')
     configmap_records = gzip.decompress(configmap_records)
     existing_records = json.loads(configmap_records)
