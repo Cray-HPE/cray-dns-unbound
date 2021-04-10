@@ -483,7 +483,7 @@ if len(diffs) > 0:
     records_string = json.dumps(master_dns_records).replace('"', '\"') # String
     records_string = codecs.encode(records_string, encoding='utf-8') # Bytes object
     records_string = gzip.compress(records_string)
-    records_string = codecs.endode(records_string, encoding='base64')
+    records_string = codecs.encode(records_string, encoding='base64')
     configmap['binaryData']['records.json.gz'] = records_string
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
         yaml.dump(configmap, tmp, default_flow_style=False)
