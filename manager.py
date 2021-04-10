@@ -481,6 +481,7 @@ if len(diffs) > 0:
     ts = time.perf_counter()
     print('    Differences found.  Writing new DNS records to our configmap.')
     records_string = json.dumps(master_dns_records).replace('"', '\"')
+    records_string = codecs.encode(records_string, encoding='utf-8')
     records_string = gzip.compress(records_string)
     configmap['binaryData']['records.json.gz'] = records_string
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
