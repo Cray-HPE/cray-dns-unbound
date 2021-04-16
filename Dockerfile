@@ -1,4 +1,4 @@
-FROM dtr.dev.cray.com/baseos/alpine:3.12
+FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.12
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
