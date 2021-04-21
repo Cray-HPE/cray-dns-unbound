@@ -60,6 +60,7 @@ spec:
             - "127.0.0.1:{{ .Values.serverPort }}"
           initialDelaySeconds: 10
           timeoutSeconds: 2
+          initialDelaySeconds: 30
         readinessProbe:
           exec:
             command:
@@ -68,6 +69,7 @@ spec:
             - "127.0.0.1:{{ .Values.serverPort }}"
           initialDelaySeconds: 10
           timeoutSeconds: 2
+          initialDelaySeconds: 30
       volumes:
       - name: unbound
         configMap:
