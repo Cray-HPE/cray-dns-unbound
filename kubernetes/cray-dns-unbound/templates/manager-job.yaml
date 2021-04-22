@@ -34,3 +34,10 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KUBERNETES_UNBOUND_DEPLOYMENT_NAME
               value: "{{ template "cray-dns-unbound.fullname" . }}"
+            resources:
+              limits:
+                cpu: "6"
+                memory: "4Gi"
+              requests:
+                cpu: "2"
+                memory: "2Gi"

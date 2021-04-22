@@ -79,6 +79,7 @@ spec:
             path: unbound.conf
           - key: records.json.gz
             path: records.json.gz
+            defaultMode: 0700
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
