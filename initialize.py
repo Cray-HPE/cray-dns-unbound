@@ -12,7 +12,7 @@ records_json_path = '{}/records.json.gz'.format(os.environ['UNBOUND_CONFIG_DIREC
 records_conf_path = '{}/records.conf'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
 
 print('Reading A records JSON file at {} and translating to {}'.format(records_json_path, records_conf_path))
-with open(records_json_path) as f_in:
+with open(records_json_path, 'rb') as f_in:
     with gzip.open(records_json_path) as f_out:
         shutil.copyfileobj(f_in, f_out)
         records = json.loads(f_out.read())
