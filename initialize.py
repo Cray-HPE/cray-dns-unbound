@@ -11,9 +11,13 @@ records_conf = ''
 records_json_path = '{}/records.json.gz'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
 records_conf_path = '{}/records.conf'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
 
+shutil.copyfile(records_json_path,'/records.json.copy.gz')
+records_json_path1 = '/records.json.copy.gz'
+os.chmod(records_json_path1 , 0o777)
+
 print('Reading A records JSON file at {} and translating to {}'.format(records_json_path, records_conf_path))
-with open(records_json_path, 'rb') as f_in:
-    with gzip.open(records_json_path) as f_out:
+with open(records_json_path1, 'rb') as f_in:
+    with gzip.open(records_json_path1) as f_out:
         shutil.copyfileobj(f_in, f_out)
         records = json.loads(f_out.read())
         for zone in records:
