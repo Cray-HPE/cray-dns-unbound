@@ -11,7 +11,7 @@ records_conf = ''
 records_json_path = '{}/records.json.gz'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
 records_conf_path = '{}/records.conf'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
 
-shutil.copyfile(records_json_path,'{}/records.json-copy.gz'.format(os.environ['UNBOUND_CONFIG_DIRECTORY']')
+shutil.copyfile(records_json_path,'{}/records.json-copy.gz'.format(os.environ['UNBOUND_CONFIG_DIRECTORY']))
 records_json_path-copy = '{}/records.json-copy.gz'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
 os.chmod(records_json_path-copy , 0o777)
 
