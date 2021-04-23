@@ -474,8 +474,7 @@ ts = time.perf_counter()
 #            val for val in master_dns_records + existing_records
 #            if val not in master_dns_records or val not in existing_records
 #        ]
-diffs = (list(list(set(master_dns_records) - set(list(existing_records.values()))) + list(set(list(existing_records.values())) - set(master_dns_records))))
-te = time.perf_counter()
+diffs = (list(list(set(master_dns_records) - set(list(existing_records.keys()))) + list(set(list(existing_records.keys())) - set(master_dns_records))))te = time.perf_counter()
 print('Comparing new and existing DNS records ({0:.5f})'.format(te-ts))
 
 if len(diffs) > 0:
