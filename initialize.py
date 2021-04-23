@@ -12,8 +12,8 @@ records_conf_path = '{}/records.conf'.format(os.environ['UNBOUND_CONFIG_DIRECTOR
 
 
 print('Reading A records JSON file at {} and translating to {}'.format(records_json_path, records_conf_path))
-f = gzip.open(records_json_path, 'rb')
-f_content = str(f.read(), "utf-8")
+with gzip.open(records_json_path, 'rb') as f:
+    f_content = str(f.read(), "utf-8")
 f.close()
 
 records = json.loads(f_content)
