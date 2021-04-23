@@ -36,8 +36,8 @@ spec:
               value: "{{ template "cray-dns-unbound.fullname" . }}"
             resources:
               limits:
-                cpu: "6"
-                memory: "4Gi"
+                cpu: "8"
+                memory: "8Gi"
               requests:
-                cpu: "2"
-                memory: "2Gi"
+                cpu: "4"
+                memory: "4Gi"
