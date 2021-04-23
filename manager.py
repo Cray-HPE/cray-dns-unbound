@@ -478,8 +478,7 @@ diff = False
 if len(existing_records) != len(master_dns_records):
     diffs = True
 else:
-    master_dns_records.sort(key='hostname')
-#    existing_records.sort(key='hostname')
+    master_dns_records.sort(key=lambda r: r['hostname'])
     if master_dns_records.sort != existing_records.sort:
         diffs = True
 
