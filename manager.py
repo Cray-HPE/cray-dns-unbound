@@ -474,18 +474,17 @@ ts = time.perf_counter()
 #            val for val in master_dns_records + existing_records
 #            if val not in master_dns_records or val not in existing_records
 #        ]
+diff = False
 if len(existing_records) == 0:
-    diffs = master_dns_records
+    diffs = true
 else:
-    diffs = [
-        val for val in master_dns_records + existing_records
-        if val not in master_dns_records or val not in existing_records
-    ]
+    if hash(master_dns_records) != hash(existing_records)
+        diffs = true
 
 te = time.perf_counter()
 print('Comparing new and existing DNS records ({0:.5f})'.format(te-ts))
 
-if len(diffs) > 0:
+if diffs:
     ts = time.perf_counter()
     print('    Differences found.  Writing new DNS records to our configmap.')
     records_string = json.dumps(master_dns_records).replace('"', '\"') # String
