@@ -478,7 +478,9 @@ diff = False
 if len(existing_records) != len(master_dns_records):
     diffs = True
 else:
-    if master_dns_records.sort(key='hostname') != existing_records.sort(key='hostname'):
+    master_dns_records.sort(key='hostname')
+#    existing_records.sort(key='hostname')
+    if master_dns_records.sort != existing_records.sort:
         diffs = True
 
 te = time.perf_counter()
