@@ -474,7 +474,7 @@ ts = time.perf_counter()
 #            val for val in master_dns_records + existing_records
 #            if val not in master_dns_records or val not in existing_records
 #        ]
-diff = False
+diffs = False
 if len(existing_records) != len(master_dns_records):
     diffs = True
 else:
