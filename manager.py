@@ -475,8 +475,9 @@ ts = time.perf_counter()
 #            if val not in master_dns_records or val not in existing_records
 #        ]
 print ('master_dns_records ',type(master_dns_records))
+print ('master_dns_records ',master_dns_records[0])
 print ('existing_records ',type(existing_records))
-
+print ('existing_records ',existing_records[0])
 diffs = (list(list(set(master_dns_records) - set(list(existing_records.keys()))) + list(set(list(existing_records.keys())) - set(master_dns_records))))
 
 te = time.perf_counter()
