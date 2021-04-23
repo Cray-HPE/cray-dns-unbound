@@ -475,10 +475,10 @@ ts = time.perf_counter()
 #            if val not in master_dns_records or val not in existing_records
 #        ]
 diff = False
-if len(existing_records) == 0:
+if len(existing_records) != len(master_dns_records):
     diffs = True
 else:
-    if hash(master_dns_records) != hash(existing_records)
+    if master_dns_records.sort(key='hostname') != existing_records.sort(key='hostname'):
         diffs = True
 
 te = time.perf_counter()
