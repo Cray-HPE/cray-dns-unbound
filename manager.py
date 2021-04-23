@@ -470,10 +470,7 @@ print('Loaded current DNS entries from configmap ({0:.5}s)'.format(te-ts))
 print('Number of existing records {}'.format(len(existing_records)))
 print('Number of new records (including duplicates) {}'.format(len(master_dns_records)))
 ts = time.perf_counter()
-#diffs = [
-#            val for val in master_dns_records + existing_records
-#            if val not in master_dns_records or val not in existing_records
-#        ]
+
 diffs = False
 if len(existing_records) != len(master_dns_records):
     diffs = True
