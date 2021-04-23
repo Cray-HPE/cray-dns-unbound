@@ -476,10 +476,10 @@ ts = time.perf_counter()
 #        ]
 diff = False
 if len(existing_records) == 0:
-    diffs = true
+    diffs = True
 else:
     if hash(master_dns_records) != hash(existing_records)
-        diffs = true
+        diffs = True
 
 te = time.perf_counter()
 print('Comparing new and existing DNS records ({0:.5f})'.format(te-ts))
