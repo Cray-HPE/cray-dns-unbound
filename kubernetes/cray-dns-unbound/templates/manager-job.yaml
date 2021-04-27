@@ -11,7 +11,7 @@ spec:
   {{ with .Values.mgrJob.schedule -}}
   schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
   {{- end }}
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Allow
   jobTemplate:
     spec:
       template:
@@ -21,9 +21,11 @@ spec:
         spec:
           restartPolicy: Never
           serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
+          terminationGracePeriodSeconds: 1200
           containers:
           - name: manager
             image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
+            activeDeadlineSeconds: 1200
             command: ["/srv/unbound/manager.py"]
             env:
             - name: KEA_API_ENDPOINT
