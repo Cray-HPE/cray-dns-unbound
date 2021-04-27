@@ -22,10 +22,10 @@ spec:
           restartPolicy: Never
           serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
           terminationGracePeriodSeconds: 1200
+          activeDeadlineSeconds: 1200
           containers:
           - name: manager
             image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
-            activeDeadlineSeconds: 1200
             command: ["/srv/unbound/manager.py"]
             env:
             - name: KEA_API_ENDPOINT
