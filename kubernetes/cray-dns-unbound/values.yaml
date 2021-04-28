@@ -27,7 +27,7 @@ containerConfigDirectory: /etc/unbound
 
 mgrJob:
   schedule:
-    minute: "*/1"
+    minute: "*/5"
     hour: "*"
     day_of_month: "*"
     month: "*"
