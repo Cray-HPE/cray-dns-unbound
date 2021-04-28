@@ -1,8 +1,8 @@
-FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.12
+FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.4
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
-RUN apk add --no-cache bash python3 py-pip unbound=1.10.1-r0
+RUN apk add --no-cache bash python3 py-pip unbound=1.13.0-r3
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
