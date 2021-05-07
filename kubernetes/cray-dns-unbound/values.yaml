@@ -18,8 +18,8 @@ imagesHost: dtr.dev.cray.com
 image:
   repository: cray/cray-dns-unbound
   pullPolicy: IfNotPresent
-verbosity: 5
-numThreads: 1
+verbosity: 0
+numThreads: 8
 statsInterval: 0
 statsCumulative: "no"
 serverPort: 5053
@@ -27,13 +27,19 @@ containerConfigDirectory: /etc/unbound
 
 mgrJob:
   schedule:
-    minute: "*/5"
+    minute: "*/3"
     hour: "*"
     day_of_month: "*"
     month: "*"
     day_of_week: "*"
 
-resources: {}
+resources:
+  limits:
+    cpu: "8"
+    memory: "16Gi"
+  requests:
+    cpu: "2"
+    memory: "4Gi"
 nodeSelector: {}
 tolerations: []
 affinity: {}
