@@ -55,7 +55,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role-binding
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.coreDNS.namespace }}
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 subjects:
