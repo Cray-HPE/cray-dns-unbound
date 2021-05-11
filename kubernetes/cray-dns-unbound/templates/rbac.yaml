@@ -45,12 +45,17 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["{{ .Values.coreDNS.configMapName }}"]
   verbs: ["get", "patch"]
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - restricted-transition-net-raw
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role-binding
-  namespace: {{ .Values.coreDNS.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 subjects:
