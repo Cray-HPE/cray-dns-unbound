@@ -82,6 +82,10 @@ stubZones: []
 localZones:
   - name: "local"
     localType: static
+  - name: "nmn."
+    localType: static
+  - name: "hmn."
+    localType: static
   - name: "."
     localType: static
 
