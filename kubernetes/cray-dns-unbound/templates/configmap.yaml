@@ -59,10 +59,14 @@ data:
         local-data-ptr: "{{ .ip }} {{ .name }}"
         {{- end }}
 
+        local-zone: "local" static
+        local-zone: "nmn." static
+        local-zone: "hmn." static
     {{- range .Values.localZones }}
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
 
+    {{- if .Values.forwardZones }}
     {{- range .Values.forwardZones }}
 
     forward-zone:
@@ -73,6 +77,9 @@ data:
         {{- range .forwardIps }}
         forward-addr: {{ . }}
         {{- end }}
+    {{- end }}
+    {{- else }}
+        local-zone: "." static
     {{- end }}
 
     {{- range .Values.stubZones }}
