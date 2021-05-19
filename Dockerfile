@@ -1,4 +1,20 @@
-FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.4
+FROM rust:1.52.1 AS builder
+
+
+ADD unbound-telemetry/ /unbound-telemetry
+WORKDIR /unbound-telemetry
+# We can't use the `rust:alpine` image directly,
+# because we have proc macros crates in the dependency tree
+# and they can't be compiled directly on musl systems.
+# Cross compiling works, though, so here we are.
+RUN apt-get update && \
+    apt-get install -y musl-tools && \
+    rustup target add x86_64-unknown-linux-musl && \
+    cargo build --release --target=x86_64-unknown-linux-musl --features vendored && \
+    strip ./target/x86_64-unknown-linux-musl/release/unbound-telemetry
+
+
+FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.5
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 
@@ -14,6 +30,7 @@ RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
     mkdir -p /srv/unbound && \
     mkdir -p /var/run/unbound
 
+COPY --from=builder /unbound-telemetry/target/x86_64-unknown-linux-musl/release/unbound-telemetry /bin
 COPY unbound.conf ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
 COPY entrypoint.sh shared.py initialize.py manager.py coredns.py /srv/unbound/
 RUN chmod +x /srv/unbound/entrypoint.sh && \
@@ -29,6 +46,7 @@ RUN chown -R unbound /var/run/unbound
 
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
-
+EXPOSE 80/udp
+EXPOSE 80/tcp
 USER unbound
 ENTRYPOINT ["/srv/unbound/entrypoint.sh"]
