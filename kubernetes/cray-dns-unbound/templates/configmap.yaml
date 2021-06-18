@@ -66,6 +66,7 @@ data:
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
 
+
     {{- if .Values.forwardZones }}
     {{- range .Values.forwardZones }}
 
@@ -81,6 +82,10 @@ data:
     {{- else }}
         local-zone: "." static
     {{- end }}
+
+    stub-zone:
+        name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
+        stub-addr: 10.92.100.85
 
     {{- range .Values.stubZones }}
 
