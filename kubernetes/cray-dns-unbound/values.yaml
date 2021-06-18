@@ -4,6 +4,8 @@ global:
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
+powerDNSServerIp: 10.92.100.85
+
 replicaCount: 3
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000

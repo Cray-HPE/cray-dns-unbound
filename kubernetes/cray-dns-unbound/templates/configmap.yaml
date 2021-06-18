@@ -84,7 +84,7 @@ data:
 
     stub-zone:
         name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
-        stub-addr: 10.92.100.85
+        stub-addr: {{ .Values.powerDNSServerIp }}
 
     {{- range .Values.stubZones }}
 
