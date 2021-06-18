@@ -82,6 +82,10 @@ data:
         local-zone: "." static
     {{- end }}
 
+    stub-zone:
+        name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
+        stub-addr: {{ .Values.powerDNSServerIp }}
+
     {{- range .Values.stubZones }}
 
     stub-zone:
