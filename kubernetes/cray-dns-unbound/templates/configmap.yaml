@@ -66,7 +66,6 @@ data:
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
 
-
     {{- if .Values.forwardZones }}
     {{- range .Values.forwardZones }}
 
