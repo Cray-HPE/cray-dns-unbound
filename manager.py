@@ -163,7 +163,15 @@ for subnet in kea_subnets:
 te = time.perf_counter()
 print('Found {0} leases and reservations in Kea local subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
 
+# check number of unbound-manager running
 
+unbound_manager_count = shared.run_command(['kubectl','-n', os.environ['KUBERNETES_NAMESPACE'],
+                                            'get', 'pods', '|grep', 'unbound-manager',
+                                            '|grep -v Completed', '|wc -l'])
+if unbound_manager_count > 5:
+    print('To many unbound-managers not completed')
+    print('Number of unbound-managers NOT COMPLETED is {}'.format(unbound_manager_count))
+    exit()
 #
 # Merge global and local Kea leases/reservations - with cleanup.
 #
