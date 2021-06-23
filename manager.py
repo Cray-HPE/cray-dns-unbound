@@ -167,7 +167,10 @@ print('Found {0} leases and reservations in Kea local subnets ({1:.5f}s)'.format
 
 unbound_manager_count = shared.run_command(['kubectl','-n', os.environ['KUBERNETES_NAMESPACE'],
                                             'get', 'pods', '|grep', 'unbound-manager',
+
                                             '|grep -v Completed', '|wc -l'])
+
+print('Number of unbound-managers NOT COMPLETED is {}'.format(unbound_manager_count))
 if unbound_manager_count > 5:
     print('To many unbound-managers not completed')
     print('Number of unbound-managers NOT COMPLETED is {}'.format(unbound_manager_count))
