@@ -164,14 +164,36 @@ te = time.perf_counter()
 print('Found {0} leases and reservations in Kea local subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
 
 # check number of unbound-manager running
+# get pods
+pod_query = subprocess.Popen(['kubectl','-n', os.environ['KUBERNETES_NAMESPACE'],
+                             'get','pods' ],
+                        stdout=subprocess.PIPE,
+                        )
 
-unbound_manager_count = shared.run_command('kubectl -n ' + os.environ['KUBERNETES_NAMESPACE'] + ' get pods|grep unbound-manager|grep -v Completed|wc -l')
+# grep out unbound-manager pods
+grep = subprocess.Popen(['grep', 'unbound-manager'],
+                        stdin=pod_query.stdout,
+                        stdout=subprocess.PIPE,
+                        )
+# exclude Completed unbound-manager pods
+grep_exclude = subprocess.Popen(['grep', '-v', 'Completed'],
+                        stdin=grep.stdout,
+                        stdout=subprocess.PIPE,
+                        )
 
-print('Number of unbound-managers NOT COMPLETED is {}'.format(unbound_manager_count))
-if unbound_manager_count > 5:
-    print('To many unbound-managers not completed')
-    print('Number of unbound-managers NOT COMPLETED is {}'.format(unbound_manager_count))
-    exit()
+wc = subprocess.Popen(['wc', '-l'],
+                        stdin=grep_exclude.stdout,
+                        stdout=subprocess.PIPE,
+                        )
+
+unbound_manager_count_output = wc.stdout
+
+for line in unbound_manager_count_output:
+    convert = int(line.decode('utf-8').strip())
+    print (convert)
+    if convert < 3:
+        print ('convert to interger worked')
+#        exit()
 #
 # Merge global and local Kea leases/reservations - with cleanup.
 #
