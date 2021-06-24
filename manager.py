@@ -190,12 +190,13 @@ wc = subprocess.Popen(['wc', '-l'],
 unbound_manager_count_output = wc.stdout
 
 for line in unbound_manager_count_output:
-    convert = int(line.decode('utf-8').strip())
-    print (convert)
-    if convert < 3:
-        print ('convert to interger worked')
-#        exit()
-#
+    converted_count = int(line.decode('utf-8').strip())
+    if converted_count > 3:
+        print ('To many unboun-manager pods not completed.')
+        print  ('There are {} pods not completed, max limit 3'.format(converted_count))
+        print ('Exiting gracefully.')
+        exit()
+
 # Merge global and local Kea leases/reservations - with cleanup.
 #
 ts = time.perf_counter()
