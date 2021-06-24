@@ -11,7 +11,7 @@ spec:
   {{ with .Values.mgrJob.schedule -}}
   schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
   {{- end }}
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Allow
   jobTemplate:
     spec:
       template:
