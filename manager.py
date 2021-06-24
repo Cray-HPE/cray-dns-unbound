@@ -189,11 +189,12 @@ wc = subprocess.Popen(['wc', '-l'],
 
 unbound_manager_count_output = wc.stdout
 
+# check to how many none Completed unbound-manager pods running
 for line in unbound_manager_count_output:
     converted_count = int(line.decode('utf-8').strip())
-    if converted_count > 3:
+    if converted_count > 1:
         print ('To many unboun-manager pods not completed.')
-        print  ('There are {} pods not completed, max limit 3'.format(converted_count))
+        print  ('There are {} pods not completed, max limit 2'.format(converted_count))
         print ('Exiting gracefully.')
         exit()
 
