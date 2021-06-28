@@ -125,7 +125,7 @@ def concurrency_check():
     for line in unbound_manager_count_output:
         converted_count = int(line.decode('utf-8').strip())
         if converted_count > 1:
-            print('To many unboun-manager pods not completed.')
+            print('To many unbound-manager pods not completed.')
             print('There are {} pods not completed, max limit 2'.format(converted_count))
             print('Exiting gracefully.')
             exit()
