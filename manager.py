@@ -11,6 +11,7 @@ import time
 import codecs
 import shared
 import requests
+import subprocess
 from tempfile import NamedTemporaryFile
 
 #
@@ -94,11 +95,54 @@ def get_kea_records(kea_response_json):
 
     return kea_records
 
+def concurrency_check():
+    # check number of unbound-manager running
+    # get pods
+    pod_query = subprocess.Popen(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'],
+                                  'get', 'pods'],
+                                 stdout=subprocess.PIPE,
+                                 )
+
+    # grep out unbound-manager pods
+    grep = subprocess.Popen(['grep', 'unbound-manager'],
+                            stdin=pod_query.stdout,
+                            stdout=subprocess.PIPE,
+                            )
+    # exclude Completed unbound-manager pods
+    grep_exclude = subprocess.Popen(['grep', '-v', 'Completed'],
+                                    stdin=grep.stdout,
+                                    stdout=subprocess.PIPE,
+                                    )
+
+    wc = subprocess.Popen(['wc', '-l'],
+                          stdin=grep_exclude.stdout,
+                          stdout=subprocess.PIPE,
+                          )
+
+    unbound_manager_count_output = wc.stdout
+
+    # check to how many none Completed unbound-manager pods running
+    for line in unbound_manager_count_output:
+        converted_count = int(line.decode('utf-8').strip())
+        if converted_count > 1:
+            print('To many unbound-manager pods not completed.')
+            print('There are {} pods not completed, max limit 2'.format(converted_count))
+            print('Exiting gracefully.')
+            exit()
 #
 # Give istio-proxy channel a chance to be ready
 #
 time.sleep(3)
 
+#
+# concurrency check
+#
+ts = time.perf_counter()
+
+concurrency_check()
+
+te = time.perf_counter()
+print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
 
 #
 # Master data structure for DNS records which *must* exist
@@ -163,8 +207,6 @@ for subnet in kea_subnets:
 te = time.perf_counter()
 print('Found {0} leases and reservations in Kea local subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
 
-
-#
 # Merge global and local Kea leases/reservations - with cleanup.
 #
 ts = time.perf_counter()

@@ -64,7 +64,9 @@ spec:
           exec:
             command:
             - "nslookup"
-            - "health.check.unbound"
+            - "packages.local"
+            # will need to restore for pdns cutover
+            #- "health.check.unbound"
             - "127.0.0.1:{{ .Values.serverPort }}"
           initialDelaySeconds: 30
           timeoutSeconds: 2

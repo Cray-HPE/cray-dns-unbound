@@ -67,19 +67,19 @@ roleRef:
   kind: ClusterRole
   name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role-binding
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "cray-dns-unbound.labels" . | indent 4 }}
-subjects:
-- kind: ServiceAccount
-  name: {{ template "cray-dns-unbound.fullname" . }}-coredns
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "cray-dns-unbound.fullname" . }}-psp
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
+  name: restricted-transition-net-raw-psp
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "cray-dns-unbound.fullname" . }}-manager
+    namespace: services
+  - kind: ServiceAccount
+    name: {{ template "cray-dns-unbound.fullname" . }}-coredns
+    namespace: services
 {{- end }}
