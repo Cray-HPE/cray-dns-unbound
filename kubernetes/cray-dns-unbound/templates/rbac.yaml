@@ -67,22 +67,6 @@ roleRef:
   kind: ClusterRole
   name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
 ---
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role-binding
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "cray-dns-unbound.labels" . | indent 4 }}
-subjects:
-- kind: ServiceAccount
-  name: {{ template "cray-dns-unbound.fullname" . }}-coredns
-  namespace: {{ .Release.Namespace }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -97,4 +81,5 @@ subjects:
     namespace: services
   - kind: ServiceAccount
     name: cray-dns-unbound-coredns
+    namespace: services
 {{- end }}
