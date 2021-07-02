@@ -38,6 +38,8 @@ spec:
         env:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "{{ .Values.containerConfigDirectory }}"
+        - name: UNBOUND_CREATE_PTR_RECORDS
+          value: "{{ .Values.createPtrRecords }}"
         ports:
         - name: udp
           containerPort: {{ .Values.serverPort }}
