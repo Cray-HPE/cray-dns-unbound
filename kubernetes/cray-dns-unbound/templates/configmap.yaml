@@ -45,6 +45,8 @@ data:
         msg-cache-size: 512m
         # increase buffer size so that no messages are lost in traffic spikes
         so-rcvbuf: 5m
+        # Set this to no for compatibility with PBSPro which requires deterministic ordering of rrsets.
+        rrset-roundrobin: no
 
         local-data: "health.check.unbound A 127.0.0.1"
         local-data-ptr: "127.0.0.1 health.check.unbound"
