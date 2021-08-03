@@ -1,5 +1,5 @@
 .devcontainer/devcontainer.json
 __pycache__/*
-kubernetes/cray-dns-powerdns/charts
+kubernetes/cray-dns-unbound/charts
 kubernetes/.packaged
 *.tgz
