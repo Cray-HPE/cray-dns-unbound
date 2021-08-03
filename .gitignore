@@ -1,2 +1,5 @@
 .devcontainer/devcontainer.json
 __pycache__/*
+kubernetes/cray-dns-powerdns/charts
+kubernetes/.packaged
+*.tgz
