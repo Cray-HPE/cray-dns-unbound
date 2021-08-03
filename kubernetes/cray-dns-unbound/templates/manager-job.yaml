@@ -11,7 +11,7 @@ spec:
   {{ with .Values.mgrJob.schedule -}}
   schedule: "{{.minute}} {{.hour}} {{.day_of_month}} {{.month}} {{.day_of_week}}"
   {{- end }}
-  concurrencyPolicy: Allow
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
@@ -41,5 +41,5 @@ spec:
                 cpu: "8"
                 memory: "8Gi"
               requests:
-                cpu: "4"
-                memory: "4Gi"
+                cpu: "500m"
+                memory: "1Gi"
