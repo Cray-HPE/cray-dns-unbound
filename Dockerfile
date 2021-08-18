@@ -17,13 +17,15 @@ RUN apt-get update && \
 FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.5
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
+ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
+ENV UNBOUND_PORT=8953
 
 RUN apk add --no-cache bash python3 py-pip unbound=1.13.0-r3
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
 
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.19.9/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.18.3/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
 
 RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
