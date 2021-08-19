@@ -1,0 +1,20 @@
+{{- if .Values.dnsUnboundExporter.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-dns-unbound-exporter
+  namespace: {{ .Values.dnsUnboundExporter.service.namespace }}
+  labels:
+    service: {{ template "cray-dns-unbound.name" . }}-dns-unbound-exporter
+    release: {{ template "cray-dns-unbound.name" . }}
+{{ include "cray-dns-unbound.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: exporter
+      port: {{ .Values.dnsUnboundExporter.service.port }}
+      protocol: TCP
+      targetPort: {{ .Values.dnsUnboundExporter.service.targetPort }}
+  selector:
+{{ toYaml .Values.dnsUnboundExporter.service.selector | indent 6 }}
+{{- end }}

@@ -1,0 +1,39 @@
+{{- /*
+Copyright 2020 Hewlett Packard Enterprise Development LP
+*/ -}}
+kind: ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-dns-unbound-exporter
+  namespace: {{ .Values.dnsUnboundExporter.serviceMonitor.namespace }}
+  labels:
+    app: {{ template "cray-dns-unbound.name" . }}-dns-unbound-exporter
+    release: cray-sysmgmt-health
+spec:
+  selector:
+    matchLabels:
+      service: {{ template "cray-dns-unbound.name" . }}-dns-unbound-exporter
+  namespaceSelector:
+    matchNames:
+      {{- range .Values.dnsUnboundExporter.serviceMonitor.matchNamespace }}
+      - {{ . }}
+      {{- end }}
+  endpoints:
+  - port: {{ .Values.dnsUnboundExporter.serviceMonitor.port }}
+    {{- if .Values.dnsUnboundExporter.serviceMonitor.interval }}
+    interval: {{ .Values.dnsUnboundExporter.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.dnsUnboundExporter.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.dnsUnboundExporter.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+    {{- if .Values.dnsUnboundExporter.serviceMonitor.scheme }}
+    scheme: {{ .Values.dnsUnboundExporter.serviceMonitor.scheme }}
+    {{- end }}
+{{- if .Values.dnsUnboundExporter.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.dnsUnboundExporter.serviceMonitor.metricRelabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.dnsUnboundExporter.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.dnsUnboundExporter.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
