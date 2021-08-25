@@ -28,6 +28,7 @@ numThreads: 8
 statsInterval: 0
 statsCumulative: "no"
 serverPort: 5053
+exporterPort: 9167
 containerConfigDirectory: /etc/unbound
 createPtrRecords: "true"
 
@@ -38,6 +39,26 @@ mgrJob:
     day_of_month: "*"
     month: "*"
     day_of_week: "*"
+
+dnsUnboundExporter:
+  enabled: true
+  service:
+    namespace: services
+    port: 9167
+    targetPort: 9167
+    selector:
+      app.kubernetes.io/name: cray-dns-unbound
+  serviceMonitor:
+    namespace: sysmgmt-health
+    matchNamespace:
+    - services
+    interval: 59s
+    scrapeTimeout: 50s
+    scheme: http
+    port: exporter
+    metricsRelabelings: {}
+    relabelings: {}
+
 
 resources:
   limits:

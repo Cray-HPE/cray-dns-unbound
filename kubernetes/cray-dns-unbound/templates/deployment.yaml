@@ -47,6 +47,9 @@ spec:
         - name: tcp
           containerPort: {{ .Values.serverPort }}
           protocol: TCP
+        - name: exporter
+          containerPort: {{ .Values.exporterPort }}
+          protocol: TCP
         volumeMounts:
         - name: unbound
           mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"

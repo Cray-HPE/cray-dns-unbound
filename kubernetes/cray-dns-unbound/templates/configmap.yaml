@@ -99,3 +99,8 @@ data:
         stub-addr: {{ . }}
         {{- end }}
     {{- end }}
+
+     remote-control:
+        control-enable: yes
+        control-use-cert: no
+        control-interface: 0.0.0.0
