@@ -23,8 +23,8 @@ imagesHost: dtr.dev.cray.com
 image:
   repository: cray/cray-dns-unbound
   pullPolicy: IfNotPresent
+infra_cache_numhosts: "1000000"
 verbosity: 0
-numThreads: 8
 statsInterval: 0
 statsCumulative: "no"
 serverPort: 5053
@@ -61,12 +61,12 @@ dnsUnboundExporter:
 
 
 resources:
-  limits:
-    cpu: "8"
-    memory: "16Gi"
   requests:
     cpu: "2"
     memory: "4Gi"
+  limits:
+    cpu: "4"
+    memory: 8Gi
 nodeSelector: {}
 tolerations: []
 affinity: {}
