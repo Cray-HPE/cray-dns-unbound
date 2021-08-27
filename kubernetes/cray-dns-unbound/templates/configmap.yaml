@@ -24,7 +24,7 @@ data:
         use-syslog: no
         logfile: ""
         access-control: 127.0.0.1/32 allow
-        num-threads: {{ .Values.numThreads }}
+        num-threads: {{ .Values.resources.requests.cpu }}
         verbosity: {{ .Values.verbosity }}
         log-queries: no
         statistics-interval: {{ .Values.statsInterval }}
@@ -36,13 +36,14 @@ data:
         prefetch: yes
         prefetch-key: yes
         # Optimisations
-        msg-cache-slabs: 8
-        rrset-cache-slabs: 8
-        infra-cache-slabs: 8
-        key-cache-slabs: 8
+        msg-cache-slabs: {{ .Values.resources.requests.cpu }}
+        rrset-cache-slabs: {{ .Values.resources.requests.cpu }}
+        infra-cache-slabs: {{ .Values.resources.requests.cpu }}
+        key-cache-slabs: {{ .Values.resources.requests.cpu }}
         # increase memory size of the cache
         rrset-cache-size: 1024m
         msg-cache-size: 512m
+        infra-cache-numhosts: {{ .Values.infra_cache_numhosts }}
         # increase buffer size so that no messages are lost in traffic spikes
         so-rcvbuf: 5m
         # Set this to no for compatibility with PBSPro which requires deterministic ordering of rrsets.
