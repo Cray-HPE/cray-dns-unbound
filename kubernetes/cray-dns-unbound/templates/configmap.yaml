@@ -4,13 +4,9 @@ metadata:
   name: {{ template "cray-dns-unbound.fullname" . }}
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
-# NOTE:  The commented records.json.gz below is a base64 encoded gzip file that
-#        unpacks to an empty list of [] and can be used to reset the configmap.
-# binaryData:
-#   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
-binaryData:
-  records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
 data:
+  records.json: |-
+    []
   unbound.conf: |-
     server:
         module-config: "iterator"
@@ -24,30 +20,10 @@ data:
         use-syslog: no
         logfile: ""
         access-control: 127.0.0.1/32 allow
-        num-threads: {{ .Values.resources.requests.cpu }}
+        num-threads: {{ .Values.numThreads }}
         verbosity: {{ .Values.verbosity }}
-        log-queries: no
         statistics-interval: {{ .Values.statsInterval }}
         statistics-cumulative: {{ .Values.statsCumulative }}
-        # Minimum lifetime of cache entries in seconds
-        cache-min-ttl: 300
-        # Maximum lifetime of cached entries
-        cache-max-ttl: 14400
-        prefetch: yes
-        prefetch-key: yes
-        # Optimisations
-        msg-cache-slabs: {{ .Values.resources.requests.cpu }}
-        rrset-cache-slabs: {{ .Values.resources.requests.cpu }}
-        infra-cache-slabs: {{ .Values.resources.requests.cpu }}
-        key-cache-slabs: {{ .Values.resources.requests.cpu }}
-        # increase memory size of the cache
-        rrset-cache-size: 1024m
-        msg-cache-size: 512m
-        infra-cache-numhosts: {{ .Values.infra_cache_numhosts }}
-        # increase buffer size so that no messages are lost in traffic spikes
-        so-rcvbuf: 5m
-        # Set this to no for compatibility with PBSPro which requires deterministic ordering of rrsets.
-        rrset-roundrobin: no
 
         local-data: "health.check.unbound A 127.0.0.1"
         local-data-ptr: "127.0.0.1 health.check.unbound"
@@ -62,14 +38,10 @@ data:
         local-data-ptr: "{{ .ip }} {{ .name }}"
         {{- end }}
 
-        local-zone: "local" static
-        local-zone: "nmn." static
-        local-zone: "hmn." static
     {{- range .Values.localZones }}
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
 
-    {{- if .Values.forwardZones }}
     {{- range .Values.forwardZones }}
 
     forward-zone:
@@ -81,13 +53,6 @@ data:
         forward-addr: {{ . }}
         {{- end }}
     {{- end }}
-    {{- else }}
-        local-zone: "." static
-    {{- end }}
-
-    stub-zone:
-        name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
-        stub-addr: {{ .Values.powerDNSServerIp }}
 
     {{- range .Values.stubZones }}
 
@@ -100,8 +65,3 @@ data:
         stub-addr: {{ . }}
         {{- end }}
     {{- end }}
-
-     remote-control:
-        control-enable: yes
-        control-use-cert: no
-        control-interface: 0.0.0.0

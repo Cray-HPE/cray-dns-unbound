@@ -13,8 +13,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 4
-      maxUnavailable: 0
+      maxSurge: 1
+      maxUnavailable: 1
   template:
     metadata:
       labels:
@@ -22,7 +22,6 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
     spec:
       securityContext:
         runAsUser: 100
@@ -39,8 +38,6 @@ spec:
         env:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "{{ .Values.containerConfigDirectory }}"
-        - name: UNBOUND_CREATE_PTR_RECORDS
-          value: "{{ .Values.createPtrRecords }}"
         ports:
         - name: udp
           containerPort: {{ .Values.serverPort }}
@@ -48,33 +45,28 @@ spec:
         - name: tcp
           containerPort: {{ .Values.serverPort }}
           protocol: TCP
-        - name: exporter
-          containerPort: {{ .Values.exporterPort }}
-          protocol: TCP
         volumeMounts:
         - name: unbound
           mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
           subPath: unbound.conf
         - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
-          subPath: records.json.gz
+          mountPath: "{{ .Values.containerConfigDirectory }}/records.json"
+          subPath: records.json
         livenessProbe:
           exec:
             command:
             - "nslookup"
             - "health.check.unbound"
             - "127.0.0.1:{{ .Values.serverPort }}"
-          initialDelaySeconds: 30
+          initialDelaySeconds: 10
           timeoutSeconds: 2
         readinessProbe:
           exec:
             command:
             - "nslookup"
-            - "packages.local"
-            # will need to restore for pdns cutover
-            #- "health.check.unbound"
+            - "health.check.unbound"
             - "127.0.0.1:{{ .Values.serverPort }}"
-          initialDelaySeconds: 30
+          initialDelaySeconds: 10
           timeoutSeconds: 2
       volumes:
       - name: unbound
@@ -83,8 +75,8 @@ spec:
           items:
           - key: unbound.conf
             path: unbound.conf
-          - key: records.json.gz
-            path: records.json.gz
+          - key: records.json
+            path: records.json
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

@@ -21,8 +21,6 @@ spec:
         spec:
           restartPolicy: Never
           serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-manager
-          terminationGracePeriodSeconds: 1200
-          activeDeadlineSeconds: 1200
           containers:
           - name: manager
             image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
@@ -36,10 +34,3 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KUBERNETES_UNBOUND_DEPLOYMENT_NAME
               value: "{{ template "cray-dns-unbound.fullname" . }}"
-            resources:
-              limits:
-                cpu: "8"
-                memory: "8Gi"
-              requests:
-                cpu: "500m"
-                memory: "1Gi"

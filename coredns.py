@@ -21,7 +21,7 @@ while True:
         corefile = shared.run_command(['kubectl', 'get', 'configmap', os.environ['KUBERNETES_COREDNS_CONFIGMAP_NAME'], '-n',
             os.environ['KUBERNETES_COREDNS_NAMESPACE'], '-o', 'jsonpath={.data[\'Corefile\']}'])
         break
-    except BaseException as err:
+    except Exception as err:
         connection_retries += 1
         message = 'Error connecting to Kubernetes API: {}'.format(err)
         if connection_retries <= max_connection_retries:
@@ -32,7 +32,7 @@ while True:
             print(message)
             raise SystemExit(err)
 
-corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . %s {' % os.environ['NMN_LOAD_BALANCER_IP'], corefile)
+corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . {}'.format(os.environ['NMN_LOAD_BALANCER_IP']), corefile)
 
 corefile_patch = """
 data:

@@ -1,33 +1,26 @@
 #!/usr/bin/env python3
-# Copyright 2014-2020 Hewlett Packard Enterprise Development LP
 
 import os
-import re
 import sys
-import gzip
 import json
 import yaml
-import time
-import codecs
-import shared
 import requests
-import subprocess
+import time
+import shared
 from tempfile import NamedTemporaryFile
 
 #
 # Pretty print errors
 #
-def on_error(err, exit=False):
+def on_error(err, exit=True):
+    print('Error: {}'.format(err))
     if exit:
-        print('ERROR: {}'.format(err))
         sys.exit(1)
-    else:
-        print('NOTICE: {}'.format(err))
 
 #
-# Remote calls to Kea, SMD and SLS with wrapper for retry and exceptions
+# Remote calls to Kea, HSM and SLS with wrapper for retry and exceptions
 #
-def remote_request(remote_type ,remote_url, headers=None, data=None, exit_on_error=False):
+def remote_request(remote_type ,remote_url, headers=None, data=None):
     connection_retries = 0
     max_connection_retries = 10
     wait_seconds_between_retries = 3
@@ -45,104 +38,23 @@ def remote_request(remote_type ,remote_url, headers=None, data=None, exit_on_err
             break
         except Exception as err:
             connection_retries += 1
-            message = 'remote call to {}: {}'.format(remote_url, err)
+            message = 'Error connecting to {}: {}'.format(remote_url, err)
             if connection_retries <= max_connection_retries:
-                on_error('failed connection attempt in {}'.format(message))
-                on_error('    retrying connection shortly...')
+                print('Connection attempt failed: {}'.format(message))
+                print('Retrying connection shortly...')
                 time.sleep(wait_seconds_between_retries)
                 continue
-
-            on_error('exception in {}'.format(message))
-            if exit_on_error:
-                raise SystemExit(err) # Allow the exception to bubble up.
             else:
-                remote_response = []
-                break
-
+                print(message)
+                raise SystemExit(err)
     return remote_response
 
 
-#
-# Perform Kea error checking and and data validation.
-#
-def get_kea_records(kea_response_json):
-    kea_records = None
-
-    # Data check: because of an exception we may have an empty list
-    # Create a stub record
-    if not kea_response_json:
-        kea_response_json.append({'result': None, 'arguments': {'Dhcp4': []}})
-
-    # Check Kea return codes. (Kea codes are 0,1,2,3)
-    kea_return_code = kea_response_json[0]['result']
-    if kea_return_code != 0:
-        on_error('Kea response contains error in results code:')
-        on_error('    results code: {}'.format(kea_return_code))
-        if not kea_return_code:
-            on_error('    exception in call to Kea')
-        if kea_return_code == 3:
-            on_error('    no leases found in Kea')
-
-    # Make sure that Kea is actually returning data!
-    if 'arguments' not in kea_response_json[0] or \
-        'Dhcp4' not in kea_response_json[0]['arguments']:
-        on_error('Kea API returned successfully, but with no leases.')
-        on_error('    return code: {}'.format(kea_return_code))
-        on_error('    return data: {}'.format(kea_response_json))
-        kea_records = {'result': None, 'arguments': {'Dhcp4': []}}
-    else:
-        kea_records = kea_response_json[0]['arguments']['Dhcp4']
-
-    return kea_records
-
-def concurrency_check():
-    # check number of unbound-manager running
-    # get pods
-    pod_query = subprocess.Popen(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'],
-                                  'get', 'pods'],
-                                 stdout=subprocess.PIPE,
-                                 )
-
-    # grep out unbound-manager pods
-    grep = subprocess.Popen(['grep', 'unbound-manager'],
-                            stdin=pod_query.stdout,
-                            stdout=subprocess.PIPE,
-                            )
-    # exclude Completed unbound-manager pods
-    grep_exclude = subprocess.Popen(['grep', '-v', 'Completed'],
-                                    stdin=grep.stdout,
-                                    stdout=subprocess.PIPE,
-                                    )
-
-    wc = subprocess.Popen(['wc', '-l'],
-                          stdin=grep_exclude.stdout,
-                          stdout=subprocess.PIPE,
-                          )
-
-    unbound_manager_count_output = wc.stdout
-
-    # check to how many none Completed unbound-manager pods running
-    for line in unbound_manager_count_output:
-        converted_count = int(line.decode('utf-8').strip())
-        if converted_count > 1:
-            print('To many unbound-manager pods not completed.')
-            print('There are {} pods not completed, max limit 2'.format(converted_count))
-            print('Exiting gracefully.')
-            exit()
 #
 # Give istio-proxy channel a chance to be ready
 #
 time.sleep(3)
 
-#
-# concurrency check
-#
-ts = time.perf_counter()
-
-concurrency_check()
-
-te = time.perf_counter()
-print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
 
 #
 # Master data structure for DNS records which *must* exist
@@ -154,10 +66,10 @@ master_dns_records = []
 # Query Kea for active server lease information
 #
 print('Querying Kea in the cluster to find any updated records we need to set')
-ts = time.perf_counter()
+
 kea_url = os.environ['KEA_API_ENDPOINT']
 # DEBUG
-#kea_url = 'http://cray-dhcp-kea-api:8000'
+# kea_url = 'http://cray-dhcp-kea-api:8000'
 kea_headers = {"Content-Type": "application/json"}
 kea_request = {"command": "config-get", "service": ["dhcp4"]}
 
@@ -165,82 +77,64 @@ kea_response_json = remote_request('POST',
                                     kea_url,
                                     headers=kea_headers,
                                     data=kea_request)
+kea_return_code = kea_response_json[0]['result']
 
-# Retrieve cleansed records that are pointing to the correct location
-kea_records = get_kea_records(kea_response_json)
+# It is possible that there are no leases.
+if kea_return_code == 3:
+    print('No leases found in Kea, exiting.')
+    sys.exit(1)
+if kea_return_code != 0:
+    print('Kea HTTP call success, but error in results:')
+    print('    Return code: {}'.format(kea_return_code))
+    print('    Data       : {}'.format(kea_response_json))
+    raise SystemExit()
 
-# Kea leases or generally canonical as to what should exist in DNS
-te = time.perf_counter()
-print('Retrieved Kea data ({0:.5}s)'.format(te-ts))
+# Make sure that Kea is actually returning some leases!
+if 'arguments' not in kea_response_json[0] or \
+    'Dhcp4' not in kea_response_json[0]['arguments'] or \
+    'reservations' not in kea_response_json[0]['arguments']['Dhcp4']:
+    print('Error:  Kea API returned successfully, but with no leases.')
+    print('        Return code: {}'.format(kea_return_code))
+    print('        Return data: {}'.format(kea_response_json[0]['arguments']['Dhcp4']))
+    sys.exit(1)
 
-
-# Global lease check - non-fatal in v1.4
-kea_global_leases = []
-if 'reservations' not in kea_records:
-    on_error('Kea global reservations data is empty')
-else:
-    kea_global_leases = kea_records['reservations']
-    print('Found {} leases and reservations in Kea globals'.format(len(kea_global_leases)))
+# Kea leases is generally canonical as to what should exit in DNS
+print('Got Kea leases successfully!')
+kea_leases = kea_response_json[0]['arguments']['Dhcp4']['reservations']
 
 
 #
-# Load per-subnet leases/reservations - can be also be global.
-# Prefer local beginning with v1.4. Data cleanup and adding in globals for now.
+# Load Kea leases into the master data structure with some data cleanup
 #
-ts = time.perf_counter()
-kea_local_leases = []
-kea_subnets = []
-if not 'subnet4' in kea_records:
-    on_error('Kea Dhcp4 lease and reservation data is empty')
-else:
-    kea_subnets = kea_records['subnet4']
-    print('Found {} subnets in Kea'.format(len(kea_subnets)))
-
-for subnet in kea_subnets:
-    if 'reservations' not in subnet:
-        continue
-    for lease in subnet['reservations']:
-        record = { 'hostname': lease['hostname'],
-                   'ip-address': lease['ip-address'] }
-        kea_local_leases.append(record)
-
-te = time.perf_counter()
-print('Found {0} leases and reservations in Kea local subnets ({1:.5f}s)'.format(len(kea_local_leases),te-ts))
-
-# Merge global and local Kea leases/reservations - with cleanup.
-#
-ts = time.perf_counter()
-for lease in kea_local_leases + kea_global_leases:
+for lease in kea_leases:
     # Some nodes might be in discovery
     if 'hostname' not in lease or 'ip-address' not in lease:
         continue
 
-    # Having empty values is an error
+    # Having empty values is a flat out error
     if not lease['hostname'].strip() or not lease['ip-address'].strip():
-        on_error('Kea returned lease with incomplete data, continuing {}'.format(lease))
+        print('Error: Kea returned lease with incomplete data.  Skipping {}'.format(lease))
         continue
 
     # CASMNET-124: change nid to nid-nmn for v1.3 because nid is HSN
     #   TODO - move this to Central DNS after data naming cleanup
-    record = None
     if lease['hostname'].find('nid') > -1:
-        record = { 'hostname': lease['hostname'] + '-nmn',
-                   'ip-address': lease['ip-address'] }
-    else:
-        record = { 'hostname': lease['hostname'],
-                   'ip-address': lease['ip-address'] }
+        host = lease['hostname'] + '-nmn'
+        ip = lease['ip-address']
+        master_dns_records.append({'hostname': host, 'ip-address': ip})
+        continue
 
-    if record not in master_dns_records:
-        master_dns_records.append(record)
-
-te = time.perf_counter()
-print('Gathered {0} total leases and reservations local and global ({1:.5f}s)'.format(len(master_dns_records),te-ts))
+    # Load remaining leases 
+    host = lease['hostname']
+    ip = lease['ip-address']
+    master_dns_records.append({'hostname': host, 'ip-address': ip})
 
 
 #
-# CASMNET-121: Query SMD for CNAME/alias information
+# CASMNET-121: Query HSM for CNAME/alias information
 #   TODO - move this to Central DNS
 #
+print('Querying HSM to find any xname records we need to set')
 # [
 #   {
 #     "ID": "b42e99be1a2b",
@@ -252,50 +146,43 @@ print('Gathered {0} total leases and reservations local and global ({1:.5f}s)'.f
 #     "Type": "Node"
 #   }
 # ]
-ts = time.perf_counter()
-smd_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
-smd_records = remote_request('GET', smd_request)
-te = time.perf_counter()
-print('Queried SMD to find any xname records we need to set ({0:.5f}s)'.format(te-ts))
-print('Found {} records in SMD'.format(len(smd_records)))
+hsm_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
+hsm_records = remote_request('GET', hsm_request)
 
 
 #
-# Find CNAME records in SMD
+# Find CNAME records in HSM
 #
-ts = time.perf_counter()
+print('Merging new HSM xnames into DNS data structure')
 new_records = []
 for dns in master_dns_records:
-    # Not all records in SMD are desired, only those with matching
+    # Not all records in HSM are desired, only those with matching
     # IP addresses and different hostnames - resulting in CNAMES.
-    for smd in smd_records:
+    for hsm in hsm_records:
         # Skip records without data
-        if 'IPAddress' not in smd or 'ComponentID' not in smd:
+        if 'IPAddress' not in hsm or 'ComponentID' not in hsm:
             continue
 
         # Skip records with blank data
-        if not smd['IPAddress'].strip() or not smd['ComponentID'].strip():
+        if not hsm['IPAddress'].strip() or not hsm['ComponentID'].strip():
             continue
 
-        # Skip records with same hostname (expected SMD/Kea duplicates)
-        if smd['ComponentID'] == dns['hostname']:
+        # Skip records with same hostname (expected HSM/Kea duplicates)
+        if hsm['ComponentID'] == dns['hostname']:
             break
 
-        if smd['IPAddress'] == dns['ip-address']:
-            new_record = {'hostname': smd['ComponentID'], 'ip-address': smd['IPAddress']}
+        if hsm['IPAddress'] == dns['ip-address']:
+            new_record = {'hostname': hsm['ComponentID'], 'ip-address': hsm['IPAddress']}
             old_record = {'hostname': dns['hostname'], 'ip-address': dns['ip-address']}
-            #print('    New CNAME {}'.format(new_record))
-            #print('     A record {}'.format(old_record))
+            print('    New CNAME {}'.format(new_record))
+            print('     A record {}'.format(old_record))
             new_records.append(new_record)
             break
 
-
 #
-# Merge SMD xnames/CNAMES with DNS nid-names.  Kea is generally is SoR
+# Merge HSM xnames/CNAMES with DNS nid-names.  Kea is generally is SoR
 #
 master_dns_records.extend(new_records)
-te = time.perf_counter()
-print('Merged new SMD xnames into DNS data structure ({0:.5f}s)'.format(te-ts))
 
 
 #
@@ -305,6 +192,7 @@ print('Merged new SMD xnames into DNS data structure ({0:.5f}s)'.format(te-ts))
 #   the 
 #   TODO - move this to Central DNS expanding use for all Role/SubRole Aliases
 #
+print('Querying SLS to find Management and Application records')
 # {
 #   "Parent": "x3000c0s26b0",
 #   "Xname": "x3000c0s26b0n0",
@@ -319,18 +207,15 @@ print('Merged new SMD xnames into DNS data structure ({0:.5f}s)'.format(te-ts))
 #     "SubRole": "UAN"
 #   }
 # }
-ts = time.perf_counter()
 sls_request = 'http://cray-sls/v1/hardware'
 sls_records = remote_request('GET', sls_request)
 
-
 #
-# 1. CASMINST-1114 PART1: Find nid names that are in kea and associate with their xname.
-# 2. Find UAN and Manager/Worker CNAME records in SLS.
+# Find UAN and Manager/Worker CNAME records in SLS.
 # NOTE:  This is the one place where we are NOT using Kea as SoR because
 #        NCNs currently are NOT dynamic/DHCP.
 #
-nid_records = []
+print('Merging new SLS Application and Management names into DNS data structure')
 new_records = []
 # Not all records in SLS are desired, only those with xnames
 # where the SubRole is UAN.
@@ -341,147 +226,60 @@ for sls in sls_records:
         'Aliases' not in sls['ExtraProperties']:
         continue
 
-    # Assemble nid name / xname correlation for HSN records later
-    # TODO: move this correlation around in Central DNS
-    for dns in master_dns_records:
-        if dns['hostname'].find('nid') > -1:
-            if dns['hostname'].replace('-nmn','') not in sls['ExtraProperties']['Aliases']:
-                continue
-            nidname = dns['hostname'].replace('-nmn','')
-            xname = sls['Xname']
-            nid_records.append({'nidname': nidname,'xname': xname})
-
     if sls['ExtraProperties']['Role'] == 'Management' or \
         sls['ExtraProperties']['Role'] == 'Application':
 
         hmn_xname = sls['Parent']
         nmn_xname = sls['Xname']
 
-        for smd in smd_records:
+        for hsm in hsm_records:
             # Skip records with blank entries
-            if not smd['ComponentID'].strip() or not smd['IPAddress'].strip():
+            if not hsm['ComponentID'].strip() or not hsm['IPAddress'].strip():
                 continue
 
             # Get the HMN IP address
-            if smd['ComponentID'] == hmn_xname:
+            if hsm['ComponentID'] == hmn_xname:
                 for alias in sls['ExtraProperties']['Aliases']:
                     mgmt_alias = alias + '-mgmt'
-                    new_record = {'hostname': mgmt_alias, 'ip-address': smd['IPAddress']}
-                    old_record = {'hostname': hmn_xname, 'ip-address': smd['IPAddress']}
+                    new_record = {'hostname': mgmt_alias, 'ip-address': hsm['IPAddress']}
+                    old_record = {'hostname': hmn_xname, 'ip-address': hsm['IPAddress']}
+                    print('    New CNAME {}'.format(new_record))
+                    print('     A record {}'.format(old_record))
                     new_records.append(new_record)
 
             # Get the NMN IP address
-            if smd['ComponentID'] == nmn_xname:
+            if hsm['ComponentID'] == nmn_xname:
                 for alias in sls['ExtraProperties']['Aliases']:
                     nmn_alias = alias + '-nmn'
-                    new_record = {'hostname': nmn_alias, 'ip-address': smd['IPAddress']}
-                    old_record = {'hostname': nmn_xname, 'ip-address': smd['IPAddress']}
+                    new_record = {'hostname': nmn_alias, 'ip-address': hsm['IPAddress']}
+                    old_record = {'hostname': nmn_xname, 'ip-address': hsm['IPAddress']}
+                    print('    New CNAME {}'.format(new_record))
+                    print('     A record {}'.format(old_record))
                     new_records.append(new_record)
-
-te = time.perf_counter()
-print('Queried SLS to find Management, Application and HSN nid records ({0:.5f})'.format(te-ts))
-print('Found {} SLS Hardware records.'.format(len(sls_records)))
-
 
 #
 # Merge SLS CNAMES with DNS records.
 # This is the one place Kea is not SoR.
 #
 master_dns_records.extend(new_records)
-print('Merged new SLS Application and Management names into DNS data structure')
 
 
-#
-# v1.4+:  Retrieve network structures
-#
-ts = time.perf_counter()
-sls_request = 'http://cray-sls/v1/networks'
-sls_networks = remote_request('GET', sls_request, exit_on_error=True)
-te = time.perf_counter()
-print('Queried SLS to find Network records ({0:.5f})'.format(te-ts))
-print('Found {} SLS Network records.'.format(len(sls_networks)))
-
-
-#
-# v1.4+: Get static A record values from network structures
-#        TODO:  when moving this to central DNS make some of these
-#        proper CNAMES
-#
-ts = time.perf_counter()
-hsn_matches = 0
-static_records = []
-for network in sls_networks:
-    if not 'ExtraProperties' in network:
-        continue
-
-    if not 'Subnets' in network['ExtraProperties'] or \
-       not network['ExtraProperties']['Subnets']:
-        continue
-
-    subnets = network['ExtraProperties']['Subnets']
-    for subnet in subnets:
-        if not 'IPReservations' in subnet:
-            continue
-
-        subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN)_.*$',r'\1',network['Name']).lower() 
-        reservations = subnet['IPReservations']
-        for reservation in reservations:
-            if 'Name' in reservation and reservation['Name'].strip():
-                # TODO: split this out as A Record in central DNS.
-                # NOTE: APPEND SUBDOMAIN to A Record to enforce part of DNS hierarchy.
-                record = { 'hostname': '{}.{}'.format(reservation['Name'],subdomain),   
-                           'ip-address': reservation['IPAddress'] }
-                static_records.append(record)
-
-                # CASMNET-379 - default no subdomain requests to NMN.  This needs to
-                # be removed when the full domain hierarchy is put into place.
-                if subdomain == 'nmn':
-                    record = { 'hostname': '{}'.format(reservation['Name']),   
-                               'ip-address': reservation['IPAddress'] }
-                    static_records.append(record)
-            if 'Aliases' in reservation: 
-                for alias in reservation['Aliases']:
-                    # TODO: split this out as a CNAME in central DNS.
-                    if not alias:
-                        continue
-                    record = { 'hostname': alias, 'ip-address': reservation['IPAddress'] }
-                    static_records.append(record)
-
-            # CASMINST-1114 PART 2: nid aliases for HSN xname records.
-            # TODO: This needs to be done differently in central DNS.
-            # Three records per: nid002023 x1003c7s7b1n1h0 nid002023-hsn0      
-            # Operate only on xnames
-            if reservation['Name'][0] == 'x':
-                reservation_xname = re.sub('h\d+$','',reservation['Name']) # remove port
-                reservation_xname = re.sub('([a-z])0+([0-9]+[a-z])',r'\1\2', reservation_xname) # zero padding
-                for nid in nid_records:
-                    if nid['xname'] == reservation_xname:
-                        hsn_matches += 1
-
-                        ipv4 = reservation['IPAddress']
-                        record = {'hostname': nid['nidname'], 'ip-address': ipv4}
-                        static_records.append(record)
-
-                        port = re.sub('^(.*)h(\d+)$',r'\2',reservation['Name'])
-                        record = {'hostname': nid['nidname']+'-hsn'+port, 'ip-address': ipv4}
-                        static_records.append(record)
-
-                        record = {'hostname': reservation['Name'], 'ip-address': ipv4}
-                        static_records.append(record)
-                
-
-te = time.perf_counter()
-master_dns_records.extend(static_records)
-print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te-ts))
-
-print('Found {} compute node nid definitions in SLS hardware'.format(len(nid_records)))
-print('Matched {} compute node nid definitions in SLS network reservations'.format(hsn_matches))
+# DEBUG
+# print(len(master_dns_records))
+# f = open('/etc/unbound/records.json')
+# existing_records = json.load(f)
+# print(len(existing_records))
+# diffs = [val for val in master_dns_records + existing_records \
+#     if val not in master_dns_records or val not in existing_records]
+# print(diffs)
+# print(len(diffs))
+# END DEBUG
 
 
 #
 # Load current running DNS entries
 #
-ts = time.perf_counter()
+print('Loading current DNS entries from configmap')
 output = shared.run_command(['kubectl', 'get', 'configmap',
                              os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'],
                              '-n', os.environ['KUBERNETES_NAMESPACE'],
@@ -490,48 +288,23 @@ try:
     # Main data structure used below
     configmap = yaml.load(output, Loader=yaml.FullLoader)
     configmap['metadata'].pop('annotations', None)
-
-    # Read in base64 encoded and gzip'd records
-    configmap_records = configmap['binaryData']['records.json.gz'] # String
-    configmap_records = codecs.encode(configmap_records, encoding='utf-8') # Bytes object
-    configmap_records = codecs.decode(configmap_records, encoding='base64')
-    configmap_records = gzip.decompress(configmap_records)
-    existing_records = json.loads(configmap_records)
+    existing_records = json.loads(configmap['data']['records.json'])
 except Exception as err:
     raise SystemExit(err)
-# DEBUG
-#f = gzip.open('/etc/unbound/records.json.gz')
-#existing_records = json.load(f)
-te = time.perf_counter()
-print('Loaded current DNS entries from configmap ({0:.5}s)'.format(te-ts))
 
 
 #
 # Any diff between master records and configmap will trigger a reload.
 #
-print('Number of existing records {}'.format(len(existing_records)))
-print('Number of new records (including duplicates) {}'.format(len(master_dns_records)))
-ts = time.perf_counter()
+print('Comparing new and existing DNS records.')
+diffs = [val for val in master_dns_records + existing_records \
+    if val not in master_dns_records or val not in existing_records]
 
-diffs = False
-if len(existing_records) != len(master_dns_records):
-    diffs = True
-else:
-    master_dns_records.sort(key=lambda r: r['hostname'])
-    if master_dns_records != existing_records:
-        diffs = True
-
-te = time.perf_counter()
-print('Comparing new and existing DNS records ({0:.5f})'.format(te-ts))
-
-if diffs:
-    ts = time.perf_counter()
+if len(diffs) > 0:
     print('    Differences found.  Writing new DNS records to our configmap.')
-    records_string = json.dumps(master_dns_records).replace('"', '\"') # String
-    records_string = codecs.encode(records_string, encoding='utf-8') # Bytes object
-    records_string = gzip.compress(records_string)
-    records_string = codecs.encode(records_string, encoding='base64')
-    configmap['binaryData']['records.json.gz'] = records_string
+    records_string = json.dumps(master_dns_records).replace('"', '\"')
+    print("  Records string: '%s'" % records_string)
+    configmap['data']['records.json'] = records_string
     with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
         yaml.dump(configmap, tmp, default_flow_style=False)
         print("  Applying the configmap")
@@ -542,7 +315,5 @@ if diffs:
                         '-n', os.environ['KUBERNETES_NAMESPACE'],
                         'rollout', 'restart', 'deployment',
                         os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
-    te = time.perf_counter()
-    print('Merged records and reloaded configmap ({0:.5f}s)'.format(te-ts))
 else:
     print('    No differences found.  Skipping DNS update')
