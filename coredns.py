@@ -32,7 +32,7 @@ while True:
             print(message)
             raise SystemExit(err)
 
-corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . %s {' % os.environ['NMN_LOAD_BALANCER_IP'], corefile)
+corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . {}'.format(os.environ['NMN_LOAD_BALANCER_IP']), corefile)
 
 corefile_patch = """
 data:

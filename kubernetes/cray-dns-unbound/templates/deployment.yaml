@@ -22,7 +22,6 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
     spec:
       securityContext:
         runAsUser: 100
@@ -39,17 +38,12 @@ spec:
         env:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "{{ .Values.containerConfigDirectory }}"
-        - name: UNBOUND_CREATE_PTR_RECORDS
-          value: "{{ .Values.createPtrRecords }}"
         ports:
         - name: udp
           containerPort: {{ .Values.serverPort }}
           protocol: UDP
         - name: tcp
           containerPort: {{ .Values.serverPort }}
-          protocol: TCP
-        - name: exporter
-          containerPort: {{ .Values.exporterPort }}
           protocol: TCP
         volumeMounts:
         - name: unbound
@@ -70,9 +64,7 @@ spec:
           exec:
             command:
             - "nslookup"
-            - "packages.local"
-            # will need to restore for pdns cutover
-            #- "health.check.unbound"
+            - "health.check.unbound"
             - "127.0.0.1:{{ .Values.serverPort }}"
           initialDelaySeconds: 30
           timeoutSeconds: 2

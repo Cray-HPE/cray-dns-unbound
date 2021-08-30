@@ -1,13 +1,8 @@
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
 
-cray-service:
-  priorityClassName: "csm-high-priority-service"
-
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
-
-powerDNSServerIp: 10.92.100.85
 
 replicaCount: 3
 
@@ -23,14 +18,12 @@ imagesHost: dtr.dev.cray.com
 image:
   repository: cray/cray-dns-unbound
   pullPolicy: IfNotPresent
-infra_cache_numhosts: "1000000"
 verbosity: 0
+numThreads: 8
 statsInterval: 0
 statsCumulative: "no"
 serverPort: 5053
-exporterPort: 9167
 containerConfigDirectory: /etc/unbound
-createPtrRecords: "true"
 
 mgrJob:
   schedule:
@@ -40,33 +33,13 @@ mgrJob:
     month: "*"
     day_of_week: "*"
 
-dnsUnboundExporter:
-  enabled: true
-  service:
-    namespace: services
-    port: 9167
-    targetPort: 9167
-    selector:
-      app.kubernetes.io/name: cray-dns-unbound
-  serviceMonitor:
-    namespace: sysmgmt-health
-    matchNamespace:
-    - services
-    interval: 59s
-    scrapeTimeout: 50s
-    scheme: http
-    port: exporter
-    metricsRelabelings: {}
-    relabelings: {}
-
-
 resources:
+  limits:
+    cpu: "8"
+    memory: "16Gi"
   requests:
     cpu: "2"
     memory: "4Gi"
-  limits:
-    cpu: "4"
-    memory: 8Gi
 nodeSelector: {}
 tolerations: []
 affinity: {}
@@ -100,19 +73,14 @@ forwardZones: []
   #   forwardIps:
   #     - "10.1.92.70"
 
-stubZones:
-  - name: 10.in-addr.arpa.
-    stubIps:
-      - "10.92.100.85"
+stubZones: []
 
 # Local resolution for Shasta zones was moved to the template (CASMNET-719)
 # Additional local zones can be defined here.
 
-localZones:
+localZones: []
   # - name: "can."
   #   localType: static
-  - name: "10.in-addr.arpa."
-    localType: nodefault
 
 # Unbound can store DNS records in a "local zone." This facility can be used to
 # assign context-specific names to a given IP address, and could also be used for
