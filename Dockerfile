@@ -1,6 +1,5 @@
 FROM rust:1.52.1 AS builder
 
-
 ADD unbound-telemetry/ /unbound-telemetry
 WORKDIR /unbound-telemetry
 # We can't use the `rust:alpine` image directly,
@@ -13,19 +12,16 @@ RUN apt-get update && \
     cargo build --release --target=x86_64-unknown-linux-musl --features vendored && \
     strip ./target/x86_64-unknown-linux-musl/release/unbound-telemetry
 
-
 FROM arti.dev.cray.com/baseos-docker-master-local/alpine:3.13.5
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
-ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
-ENV UNBOUND_PORT=8953
 
 RUN apk add --no-cache bash python3 py-pip unbound=1.13.2-r0
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
 
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.18.3/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.19.9/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
 
 RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
@@ -48,7 +44,8 @@ RUN chown -R unbound /var/run/unbound
 
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
-EXPOSE 80/udp
-EXPOSE 80/tcp
+EXPOSE 80/UDP
+EXPOSE 80/TCP
+
 USER unbound
 ENTRYPOINT ["/srv/unbound/entrypoint.sh"]

@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "cray-dns-unbound.labels" . | indent 4 }}
 spec:
-  maxUnavailable: 0
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}

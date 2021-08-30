@@ -30,7 +30,7 @@ data:
         statistics-interval: {{ .Values.statsInterval }}
         statistics-cumulative: {{ .Values.statsCumulative }}
         # Minimum lifetime of cache entries in seconds
-        cache-min-ttl: 300
+        cache-min-ttl: 6000
         # Maximum lifetime of cached entries
         cache-max-ttl: 14400
         prefetch: yes
@@ -45,7 +45,10 @@ data:
         msg-cache-size: 512m
         infra-cache-numhosts: {{ .Values.infra_cache_numhosts }}
         # increase buffer size so that no messages are lost in traffic spikes
-        so-rcvbuf: 5m
+        so-rcvbuf: 8m
+        so-sndbuf: 8m
+        # Faster UDP with multithreading (only on Linux).
+        so-reuseport: yes
         # Set this to no for compatibility with PBSPro which requires deterministic ordering of rrsets.
         rrset-roundrobin: no
 
@@ -85,10 +88,6 @@ data:
         local-zone: "." static
     {{- end }}
 
-    stub-zone:
-        name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
-        stub-addr: {{ .Values.powerDNSServerIp }}
-
     {{- range .Values.stubZones }}
 
     stub-zone:
@@ -100,8 +99,3 @@ data:
         stub-addr: {{ . }}
         {{- end }}
     {{- end }}
-
-     remote-control:
-        control-enable: yes
-        control-use-cert: no
-        control-interface: 0.0.0.0
