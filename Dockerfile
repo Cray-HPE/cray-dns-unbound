@@ -1,4 +1,4 @@
-FROM rust:1.52.1 AS builder
+FROM rust:1.54.0 AS builder
 
 ADD unbound-telemetry/ /unbound-telemetry
 WORKDIR /unbound-telemetry
