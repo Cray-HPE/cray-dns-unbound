@@ -64,10 +64,13 @@ spec:
           exec:
             command:
             - "nslookup"
-            - "health.check.unbound"
+            - "packages.local"
             - "127.0.0.1:{{ .Values.serverPort }}"
+          failureThreshold: 1
           initialDelaySeconds: 30
-          timeoutSeconds: 2
+          periodSeconds: 5
+          successThreshold: 3
+          timeoutSeconds: 1
       volumes:
       - name: unbound
         configMap:
