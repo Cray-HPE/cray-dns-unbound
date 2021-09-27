@@ -122,3 +122,9 @@ localRecords: []
 # localRecords:
 # - name: "fake3.host.net"
 #   ip: "10.12.10.10"
+
+# NOTE:  The commented records.json.gz below is a base64 encoded gzip file that
+#        unpacks to an empty list of [] and can be used to reset the configmap.
+# binaryData:
+#   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
+host_records_gzip: "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"
