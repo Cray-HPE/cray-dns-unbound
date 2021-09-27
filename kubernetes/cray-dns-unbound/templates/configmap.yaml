@@ -9,7 +9,7 @@ metadata:
 # binaryData:
 #   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
 binaryData:
-  records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
+  records.json.gz: {{ .Values.host_records_gzip } }
 data:
   unbound.conf: |-
     server:
