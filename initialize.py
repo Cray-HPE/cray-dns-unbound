@@ -5,6 +5,9 @@ import gzip
 import json
 import os
 import shutil
+import signal
+import subprocess
+
 
 
 config_load_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/config_loaded'
@@ -65,3 +68,19 @@ if reload_configs:
 	f = open(records_conf_path, 'w')
 	f.write("\n".join(records_conf))
 	f.close()
+
+	pid_search = "unbound -c /etc/unbound/unbound.conf"
+	ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n") # Launch command line and gather output
+	for entry in ps_out:  # Loop over returned lines of ps
+		#print(entry)
+		if pid_search in entry:
+			unbound_pid = entry.split()[0] # retrieve second entry in line
+			break
+	print (' Warm reload of unbound to update configurations')
+	print ('unbound pid is: {}'.format(unbound_pid))
+	print('')
+	try:
+		os.kill(int(unbound_pid), signal.SIGHUP)
+	except Exception as err:
+		raise SystemExit(err)
+	print('Unbound warm reload completed.')

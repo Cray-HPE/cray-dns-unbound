@@ -537,11 +537,11 @@ if diffs:
         print("  Applying the configmap")
         shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
-    print('  Running a rolling restart of the deployment...')
-    shared.run_command(['kubectl',
-                        '-n', os.environ['KUBERNETES_NAMESPACE'],
-                        'rollout', 'restart', 'deployment',
-                        os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
+    #print('  Running a rolling restart of the deployment...')
+    #shared.run_command(['kubectl',
+    #                    '-n', os.environ['KUBERNETES_NAMESPACE'],
+    #                    'rollout', 'restart', 'deployment',
+    #                    os.environ['KUBERNETES_UNBOUND_DEPLOYMENT_NAME']])
     te = time.perf_counter()
     print('Merged records and reloaded configmap ({0:.5f}s)'.format(te-ts))
 else:
