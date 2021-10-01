@@ -57,12 +57,12 @@ spec:
           containerPort: {{ .Values.exporterPort }}
           protocol: TCP
         volumeMounts:
-        - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
-          subPath: unbound.conf
-        - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
-          subPath: records.json.gz
+#        - name: unbound
+#          mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
+#          subPath: unbound.conf
+#        - name: unbound
+#          mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
+#          subPath: records.json.gz
         - name: configmap-data
           mountPath: "{{ .Values.containerConfigMapDataDirectory }}"
         livenessProbe:
@@ -87,14 +87,14 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
-      - name: unbound
-        configMap:
-          name: {{ template "cray-dns-unbound.fullname" . }}
-          items:
-          - key: unbound.conf
-            path: unbound.conf
-          - key: records.json.gz
-            path: records.json.gz
+#      - name: unbound
+#        configMap:
+#          name: {{ template "cray-dns-unbound.fullname" . }}
+#          items:
+#          - key: unbound.conf
+#            path: unbound.conf
+#          - key: records.json.gz
+#            path: records.json.gz
       - name: configmap-data
         configMap:
           name: cray-dns-unbound
