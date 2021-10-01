@@ -39,8 +39,12 @@ spec:
         env:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "{{ .Values.containerConfigDirectory }}"
+        - name: UNBOUND_CONFIGMAP_DIRECTORY
+          value: "{{ .Values.containerConfigMapDataDirectory }}"
         - name: UNBOUND_CREATE_PTR_RECORDS
           value: "{{ .Values.createPtrRecords }}"
+        - name: DNS_INITIALIZE_INTERVAL_SECONDS
+          value: {{ .Values.dnsInitializeIntervalSeconds }}
         ports:
         - name: udp
           containerPort: {{ .Values.serverPort }}
@@ -58,7 +62,7 @@ spec:
         - name: unbound
           mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
           subPath: records.json.gz
-        - name: configmap_data
+        - name: configmap-data
           mountpath: "{{ .Values.containerConfigMapDataDirectory }}"
         livenessProbe:
           exec:
@@ -90,9 +94,9 @@ spec:
             path: unbound.conf
           - key: records.json.gz
             path: records.json.gz
-      - name: configMap_data
+      - name: configmap-data
         configMap:
-          name: configmap_data
+          name: cray-dns-unbound
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
