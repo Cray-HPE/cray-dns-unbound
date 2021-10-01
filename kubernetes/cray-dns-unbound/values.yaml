@@ -1,9 +1,6 @@
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
 
-#cray-service:
-#  priorityClassName: "csm-high-priority-service"
-
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
