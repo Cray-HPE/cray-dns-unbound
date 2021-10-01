@@ -64,7 +64,7 @@ spec:
           mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
           subPath: records.json.gz
         - name: configmap-data
-          mountpath: "{{ .Values.containerConfigMapDataDirectory }}"
+          mountPath: "{{ .Values.containerConfigMapDataDirectory }}"
         livenessProbe:
           exec:
             command:
