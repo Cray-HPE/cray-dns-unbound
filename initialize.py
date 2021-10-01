@@ -17,6 +17,7 @@ if not check_config_loaded:
 	f = open(config_load_file, 'w')
 	f.write(folder_contents[0])
 	f.close
+	reload_configs = True
 
 if check_config_loaded:
 	f = open(config_load_file, 'r')
