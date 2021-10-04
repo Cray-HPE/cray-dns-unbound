@@ -29,9 +29,8 @@ serverPort: 5053
 exporterPort: 9167
 containerConfigDirectory: /etc/unbound
 containerConfigMapDataDirectory: /configmap
-containerConfigMapJobsDirectory: /srv/unbound
 createPtrRecords: "true"
-dnsInitializeIntervalSeconds: 90
+dnsInitializeIntervalSeconds: 180
 
 mgrJob:
   schedule:

@@ -57,10 +57,8 @@ spec:
           containerPort: {{ .Values.exporterPort }}
           protocol: TCP
         volumeMounts:
-        - name: {{ template "cray-dns-unbound.fullname" . }}-data
+        - name: configmap-data
           mountPath: "{{ .Values.containerConfigMapDataDirectory }}"
-        - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
-          mountPath: "{{ .Values.containerConfigMapJobsDirectory }}"
         livenessProbe:
           exec:
             command:
@@ -83,13 +81,9 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
-      - name: {{ template "cray-dns-unbound.fullname" . }}-data
+      - name: configmap-data
         configMap:
-          name: {{ template "cray-dns-unbound.fullname" . }}
-      - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
-        configMap:
-          defaultMode: 0777
-          name: {{ template "cray-dns-unbound.fullname" . }}-jobs
+          name: cray-dns-unbound
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
