@@ -7,8 +7,10 @@ import os
 import shutil
 import signal
 import subprocess
+import time
 
-
+# start timer
+ts = time.perf_counter()
 
 config_load_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/config_loaded'
 check_config_loaded = os.path.isfile(config_load_file)
@@ -27,18 +29,22 @@ if check_config_loaded:
 	config_load_id = f.read()
 	f.close
 
-print ('config_load_id {}'.format(config_load_id))
-print ('folder_contents_id {}'.format(folder_contents[0]))
+print ('Starting check for updates to DNS records')
+print ('ID for loaded data	{}'.format(config_load_id))
+print ('ID for mounted data	{}'.format(folder_contents[0]),'\n')
+
 
 if config_load_id != folder_contents[0]:
 	reload_configs = True
+	print ('Difference in IDs between mounted and loaded data detected\n')
 
-print (reload_configs)
 
 if reload_configs:
+	print ('Copying data from mounted folder to Unbound config folder.')
 	shutil.copyfile('/configmap/records.json.gz', '/etc/unbound/records.json.gz')
 	shutil.copyfile('/configmap/unbound.conf', '/etc/unbound/unbound.conf')
 
+	print ('Processing data.')
 	records_conf = []
 
 	records_json_path = '{}/records.json.gz'.format(os.environ['UNBOUND_CONFIG_DIRECTORY'])
@@ -69,8 +75,10 @@ if reload_configs:
 	f.write("\n".join(records_conf))
 	f.close()
 
+	print ('Processing data completed.\n')
 	# reload only if records is not empty
 	if len(records) > 0:
+		print ('Warm reload of Unbound started')
 		pid_search = "unbound -c /etc/unbound/unbound.conf"
 		ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n") # Launch command line and gather output
 		for entry in ps_out:  # Loop over returned lines of ps
@@ -86,3 +94,10 @@ if reload_configs:
 		except Exception as err:
 			raise SystemExit(err)
 		print('Unbound warm reload completed.')
+		print ('Warm reload of Unbound completed.\n')
+
+# end timer
+te = time.perf_counter()
+print('Total time taken to run ({0:.5}s)'.format(te-ts), '\n')
+print ('Completed check for updates to DNS records\n')
+
