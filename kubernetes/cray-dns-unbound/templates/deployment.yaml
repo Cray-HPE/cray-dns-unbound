@@ -56,8 +56,6 @@ spec:
         volumeMounts:
         - name: configmap-data
           mountPath: "{{ .Values.containerConfigMapDataDirectory }}"
-        - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
-          mountPath: "{{ .Values.containerConfigMapJobsDirectory }}"
         livenessProbe:
           exec:
             command:
@@ -80,13 +78,17 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
+      - name: unbound
+        configMap:
+          name: {{ template "cray-dns-unbound.fullname" . }}
+          items:
+          - key: unbound.conf
+            path: unbound.conf
+          - key: records.json.gz
+            path: records.json.gz
       - name: configmap-data
         configMap:
           name: cray-dns-unbound
-      - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
-        configMap:
-          defaultMode: 0777
-          name: {{ template "cray-dns-unbound.fullname" . }}-jobs
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
