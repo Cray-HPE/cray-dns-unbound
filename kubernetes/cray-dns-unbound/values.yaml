@@ -24,8 +24,8 @@ numThreads: 8
 statsInterval: 0
 statsCumulative: "no"
 serverPort: 5053
+containerConfigDirectory: /etc/unbound
 containerConfigMapDataDirectory: /configmap
-containerConfigMapJobsDirectory: /srv/unbound
 createPtrRecords: "true"
 dnsInitializeIntervalSeconds: 180
 
