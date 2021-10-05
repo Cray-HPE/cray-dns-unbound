@@ -80,14 +80,6 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
-      - name: unbound
-        configMap:
-          name: {{ template "cray-dns-unbound.fullname" . }}
-          items:
-          - key: unbound.conf
-            path: unbound.conf
-          - key: records.json.gz
-            path: records.json.gz
       - name: configmap-data
         configMap:
           name: cray-dns-unbound
