@@ -19,9 +19,6 @@ config_load_id = ''
 reload_configs = False
 
 if not check_config_loaded:
-    f = open(config_load_file, 'w')
-    f.write(folder_contents[0])
-    f.close()
     reload_configs = True
 
 if check_config_loaded:
@@ -84,8 +81,10 @@ if reload_configs:
             # print ('in while loop')
             pid_search = "unbound -c /etc/unbound/unbound.conf"
             # Launch command line and gather output
-            ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n")
+            try:
+                ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n")
+            except: continue
             for entry in ps_out:  # Loop over returned lines of ps
                 # print(entry)
                 if pid_search in entry:
