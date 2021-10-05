@@ -14,7 +14,7 @@ ts = time.perf_counter()
 
 config_load_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/config_loaded'
 check_config_loaded = os.path.isfile(config_load_file)
-folder_contents = sorted(os.listdir('/configmap/'))
+folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
 config_load_id = ''
 reload_configs = False
 
