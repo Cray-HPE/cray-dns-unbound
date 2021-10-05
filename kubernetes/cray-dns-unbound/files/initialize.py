@@ -91,8 +91,9 @@ if reload_configs:
                 # print(entry)
                 if pid_search in entry:
                     unbound_pid = entry.split()[0]  # retrieve second entry in line
-            pid_check_tries += 1
-            time.sleep(5)
+            if unbound_pid == 0:
+                pid_check_tries += 1
+                time.sleep(5)
         if unbound_pid != 0:
             print('Warm reload of unbound to update configurations')
             print('Unbound pid is: {}'.format(unbound_pid))
