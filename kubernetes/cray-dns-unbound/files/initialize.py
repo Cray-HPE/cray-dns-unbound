@@ -84,13 +84,9 @@ if reload_configs:
             pid_search = "unbound -c /etc/unbound/unbound.conf"
             # Launch command line and gather output
             try:
-                ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n")
-            except: continue
-            for entry in ps_out:  # Loop over returned lines of ps
-                # print(entry)
-                if pid_search in entry:
-                    unbound_pid = entry.split()[0]  # retrieve second entry in line
+                ps_out = int(subprocess.check_output(["pidof", "unbound"]))
+            except Exception as err:
+                continue
             if unbound_pid == 0:
                 pid_check_tries += 1
                 time.sleep(5)
@@ -108,9 +104,10 @@ if reload_configs:
             f.close()
             print('Warm reload of Unbound completed.\n')
         else:
-            print ('Did not detect Unbound pid.\n')
-            print ('This can happen on the first run of initialize.py before Unbound has started.')
-
+            print('Did not detect Unbound pid.\n')
+            print('This can happen on the first run of initialize.py before Unbound has started.')
+    else:
+        print('Record data is empty, not reloading Unbound.')
 
 
 # end timer
