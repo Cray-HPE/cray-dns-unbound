@@ -87,8 +87,8 @@ if reload_configs:
                 unbound_pid = int(subprocess.check_output(["pidof", "unbound"]))
             except Exception as err:
                 print ("Failed getting Unbound PID twice")
-                raise SystemExit(err)
-        if unbound_pid != 0:
+                pass
+        if unbound_pid != 0 and isinstance(unbound_pid, int):
             print('Warm reload of unbound to update configurations')
             print('Unbound pid is: {}'.format(unbound_pid))
             try:
