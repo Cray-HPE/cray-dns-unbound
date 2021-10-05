@@ -78,15 +78,20 @@ if reload_configs:
     print ('Processing data completed.\n')
     # reload only if records is not empty
     if len(records) > 0:
-        unbound_pid = 1
+        unbound_pid = 0
+        pid_check_tries = 0
         print ('Warm reload of Unbound started')
-        pid_search = "unbound -c /etc/unbound/unbound.conf"
-        ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n") # Launch command line and gather output
-        for entry in ps_out:  # Loop over returned lines of ps
-            #print(entry)
-            if pid_search in entry:
-                unbound_pid = entry.split()[0] # retrieve second entry in line
-                break
+        # check for pid
+        while unbound_pid == 0 and pid_check_tries > 10:
+            pid_search = "unbound -c /etc/unbound/unbound.conf"
+            ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n") # Launch command line and gather output
+            for entry in ps_out:  # Loop over returned lines of ps
+                #print(entry)
+                if pid_search in entry:
+                    unbound_pid = entry.split()[0] # retrieve second entry in line
+            pid_check_tries += 1
+            sleep 5
+
         print (' Warm reload of unbound to update configurations')
         print ('unbound pid is: {}'.format(unbound_pid))
         print('')
