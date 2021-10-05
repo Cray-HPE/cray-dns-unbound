@@ -25,6 +25,7 @@ statsCumulative: "no"
 serverPort: 5053
 containerConfigDirectory: /etc/unbound
 containerConfigMapDataDirectory: /configmap
+containerConfigMapJobsDirectory: /srv/unbound
 createPtrRecords: "true"
 dnsInitializeIntervalSeconds: 180
 
@@ -99,3 +100,4 @@ localRecords: []
 # binaryData:
 #   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
 host_records_gzip: "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"
+
