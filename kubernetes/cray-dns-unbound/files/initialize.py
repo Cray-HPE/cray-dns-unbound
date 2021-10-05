@@ -109,6 +109,7 @@ if reload_configs:
 
         else:
             print ('Did not detect Unbound pid.\n')
+            print ('This can happen on the first run of initialize.py before Unbound has started.')
 
 
 
