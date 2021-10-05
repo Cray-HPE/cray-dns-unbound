@@ -83,31 +83,34 @@ if reload_configs:
         while (unbound_pid == 0) and (pid_check_tries <= 10):
             # print ('in while loop')
             pid_search = "unbound -c /etc/unbound/unbound.conf"
+            # Launch command line and gather output
             ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split(
-                "\n")  # Launch command line and gather output
+                                      stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n")
             for entry in ps_out:  # Loop over returned lines of ps
                 # print(entry)
                 if pid_search in entry:
                     unbound_pid = entry.split()[0]  # retrieve second entry in line
             pid_check_tries += 1
             time.sleep(5)
+        if unbound_pid != 0:
+            print(' Warm reload of unbound to update configurations')
+            print('unbound pid is: {}'.format(unbound_pid))
+            print('')
+            try:
+                os.kill(int(unbound_pid), signal.SIGHUP)
+            except Exception as err:
+                raise SystemExit(err)
 
-        print(' Warm reload of unbound to update configurations')
-        print('unbound pid is: {}'.format(unbound_pid))
-        print('')
-        try:
-            os.kill(int(unbound_pid), signal.SIGHUP)
-        except Exception as err:
-            raise SystemExit(err)
+            # write check file to not update next run
+            f = open(config_load_file, 'w')
+            f.write(folder_contents[0])
+            f.close()
+            print('Warm reload of Unbound completed.\n')
 
-        # write check file to not update next run
-        f = open(config_load_file, 'w')
-        f.write(folder_contents[0])
-        f.close()
+        else:
+            print ('Did not detect Unbound pid.\n')
 
-        print('Unbound warm reload completed.')
-        print('Warm reload of Unbound completed.\n')
+
 
 # end timer
 te = time.perf_counter()
