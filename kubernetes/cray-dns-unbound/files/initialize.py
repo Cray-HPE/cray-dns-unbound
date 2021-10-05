@@ -33,6 +33,8 @@ print('ID for mounted data	{}'.format(folder_contents[0]), '\n')
 if config_load_id != folder_contents[0]:
     reload_configs = True
     print('Difference in IDs between mounted and loaded data detected\n')
+else:
+    print('No Difference in IDs between mounted and loaded data detected\n')
 
 if reload_configs:
     print('Copying data from mounted folder to Unbound config folder.')
@@ -92,20 +94,18 @@ if reload_configs:
             pid_check_tries += 1
             time.sleep(5)
         if unbound_pid != 0:
-            print(' Warm reload of unbound to update configurations')
-            print('unbound pid is: {}'.format(unbound_pid))
-            print('')
+            print('Warm reload of unbound to update configurations')
+            print('Unbound pid is: {}'.format(unbound_pid))
             try:
                 os.kill(int(unbound_pid), signal.SIGHUP)
             except Exception as err:
                 raise SystemExit(err)
 
-            # write check file to not update next run
+            # write config version
             f = open(config_load_file, 'w')
             f.write(folder_contents[0])
             f.close()
             print('Warm reload of Unbound completed.\n')
-
         else:
             print ('Did not detect Unbound pid.\n')
             print ('This can happen on the first run of initialize.py before Unbound has started.')
