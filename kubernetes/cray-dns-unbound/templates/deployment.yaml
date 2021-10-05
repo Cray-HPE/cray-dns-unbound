@@ -56,6 +56,8 @@ spec:
         volumeMounts:
         - name: configmap-data
           mountPath: "{{ .Values.containerConfigMapDataDirectory }}"
+        - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
+          mountPath: "{{ .Values.containerConfigMapJobsDirectory }}"
         livenessProbe:
           exec:
             command:
@@ -89,6 +91,9 @@ spec:
       - name: configmap-data
         configMap:
           name: cray-dns-unbound
+      - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
+        configMap:
+          name: {{ template "cray-dns-unbound.fullname" . }}-jobs
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
