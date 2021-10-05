@@ -83,19 +83,12 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
-#      - name: unbound
-#        configMap:
-#          name: {{ template "cray-dns-unbound.fullname" . }}
-#          items:
-#          - key: unbound.conf
-#            path: unbound.conf
-#          - key: records.json.gz
-#            path: records.json.gz
       - name: {{ template "cray-dns-unbound.fullname" . }}-data
         configMap:
           name: {{ template "cray-dns-unbound.fullname" . }}
       - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
         configMap:
+          defaultMode: 0700
           name: {{ template "cray-dns-unbound.fullname" . }}-jobs
 {{- with .Values.nodeSelector }}
       nodeSelector:
