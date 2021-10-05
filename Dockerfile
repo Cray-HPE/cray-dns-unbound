@@ -30,7 +30,7 @@ RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
 
 COPY --from=builder /unbound-telemetry/target/x86_64-unknown-linux-musl/release/unbound-telemetry /bin
 COPY unbound.conf ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
-COPY entrypoint.sh shared.py initialize.py manager.py coredns.py /srv/unbound/
+COPY kubernetes/cray-dns-unbound/files/*.* /srv/unbound/
 RUN chmod +x /srv/unbound/entrypoint.sh && \
     chmod +x /srv/unbound/initialize.py && \
     chmod +x /srv/unbound/manager.py && \
