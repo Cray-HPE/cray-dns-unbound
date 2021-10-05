@@ -85,6 +85,7 @@ spec:
           name: cray-dns-unbound
       - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
         configMap:
+          defaultMode: 0700
           name: {{ template "cray-dns-unbound.fullname" . }}-jobs
 {{- with .Values.nodeSelector }}
       nodeSelector:
