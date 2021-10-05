@@ -79,17 +79,15 @@ if reload_configs:
         pid_check_tries = 0
         print('Warm reload of Unbound started')
         # check for pid
-        while (unbound_pid == 0) and (pid_check_tries <= 10):
-            # print ('in while loop')
-            pid_search = "unbound -c /etc/unbound/unbound.conf"
-            # Launch command line and gather output
+        try:
+            unbound_pid = int(subprocess.check_output(["pidof", "unbound"]))
+        except Exception as err:
+            time.sleep(5)
             try:
                 unbound_pid = int(subprocess.check_output(["pidof", "unbound"]))
             except Exception as err:
-                continue
-            if unbound_pid == 0:
-                pid_check_tries += 1
-                time.sleep(5)
+                print ("Failed getting Unbound PID twice")
+                raise SystemExit(err)
         if unbound_pid != 0:
             print('Warm reload of unbound to update configurations')
             print('Unbound pid is: {}'.format(unbound_pid))
