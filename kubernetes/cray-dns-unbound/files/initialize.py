@@ -14,14 +14,11 @@ ts = time.perf_counter()
 
 config_load_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/config_loaded'
 check_config_loaded = os.path.isfile(config_load_file)
-folder_contents = sorted(os.listdir('/configmap/'))
+folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
 config_load_id = ''
 reload_configs = False
 
 if not check_config_loaded:
-    f = open(config_load_file, 'w')
-    f.write(folder_contents[0])
-    f.close()
     reload_configs = True
 
 if check_config_loaded:
@@ -36,6 +33,8 @@ print('ID for mounted data	{}'.format(folder_contents[0]), '\n')
 if config_load_id != folder_contents[0]:
     reload_configs = True
     print('Difference in IDs between mounted and loaded data detected\n')
+else:
+    print('No Difference in IDs between mounted and loaded data detected\n')
 
 if reload_configs:
     print('Copying data from mounted folder to Unbound config folder.')
@@ -84,33 +83,31 @@ if reload_configs:
             # print ('in while loop')
             pid_search = "unbound -c /etc/unbound/unbound.conf"
             # Launch command line and gather output
-            ps_out = subprocess.Popen("ps -ef".split(' '), stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE).stdout.read().decode('UTF-8').split("\n")
-            for entry in ps_out:  # Loop over returned lines of ps
-                # print(entry)
-                if pid_search in entry:
-                    unbound_pid = entry.split()[0]  # retrieve second entry in line
-            pid_check_tries += 1
-            time.sleep(5)
+            try:
+                unbound_pid = int(subprocess.check_output(["pidof", "unbound"]))
+            except Exception as err:
+                continue
+            if unbound_pid == 0:
+                pid_check_tries += 1
+                time.sleep(5)
         if unbound_pid != 0:
-            print(' Warm reload of unbound to update configurations')
-            print('unbound pid is: {}'.format(unbound_pid))
-            print('')
+            print('Warm reload of unbound to update configurations')
+            print('Unbound pid is: {}'.format(unbound_pid))
             try:
                 os.kill(int(unbound_pid), signal.SIGHUP)
             except Exception as err:
                 raise SystemExit(err)
 
-            # write check file to not update next run
+            # write config version
             f = open(config_load_file, 'w')
             f.write(folder_contents[0])
             f.close()
             print('Warm reload of Unbound completed.\n')
-
         else:
-            print ('Did not detect Unbound pid.\n')
-            print ('This can happen on the first run of initialize.py before Unbound has started.')
-
+            print('Did not detect Unbound pid.\n')
+            print('This can happen on the first run of initialize.py before Unbound has started.')
+    else:
+        print('Record data is empty, not reloading Unbound.')
 
 
 # end timer
