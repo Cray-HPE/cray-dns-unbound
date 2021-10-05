@@ -84,7 +84,7 @@ if reload_configs:
             pid_search = "unbound -c /etc/unbound/unbound.conf"
             # Launch command line and gather output
             try:
-                ps_out = int(subprocess.check_output(["pidof", "unbound"]))
+                unbound_pid = int(subprocess.check_output(["pidof", "unbound"]))
             except Exception as err:
                 continue
             if unbound_pid == 0:
