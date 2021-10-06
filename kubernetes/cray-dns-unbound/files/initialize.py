@@ -8,10 +8,6 @@ import shutil
 import signal
 import subprocess
 import time
-import datetime
-
-date_time = datetime.datetime.now()
-print(date_time.strftime("%Y-%b-%d %H:%M"), '\n')
 
 # start timer
 ts = time.perf_counter()
