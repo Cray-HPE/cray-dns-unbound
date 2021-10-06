@@ -27,6 +27,7 @@ spec:
         runAsUser: 100
         runAsGroup: 101
         fsGroup: 101
+      priorityClassName: csm-high-priority-service
       containers:
       - name: unbound
         image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
@@ -76,7 +77,6 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
-<<<<<<< HEAD
       - name: {{ template "cray-dns-unbound.fullname" . }}-data
         configMap:
           name: {{ template "cray-dns-unbound.fullname" . }}
@@ -84,11 +84,6 @@ spec:
         configMap:
           defaultMode: 0777
           name: {{ template "cray-dns-unbound.fullname" . }}-jobs
-=======
-      - name: configmap-data
-        configMap:
-          name: cray-dns-unbound
->>>>>>> daeb679 (CASMNET-927-1.4 - enable warm reload of unbound for dns changes.)
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
