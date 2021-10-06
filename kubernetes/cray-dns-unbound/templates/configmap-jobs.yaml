@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}-jobs
+data:
+  coredns.py: |-
+{{ .Files.Get "files/coredns.py" | indent 4 }}
+  entrypoint.sh: |-
+{{ .Files.Get "files/entrypoint.sh" | indent 4 }}
+  initialize.py: |-
+{{ .Files.Get "files/initialize.py" | indent 4 }}
+  manager.py: |-
+{{ .Files.Get "files/manager.py" | indent 4 }}
+  shared.py: |-
+{{ .Files.Get "files/shared.py" | indent 4 }}
