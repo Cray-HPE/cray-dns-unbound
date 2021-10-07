@@ -1,8 +1,6 @@
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
 
-cray-service:
-  priorityClassName: "csm-high-priority-service"
 
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
@@ -30,7 +28,10 @@ statsCumulative: "no"
 serverPort: 5053
 exporterPort: 9167
 containerConfigDirectory: /etc/unbound
+containerConfigMapDataDirectory: /configmap
+containerConfigMapJobsDirectory: /srv/unbound
 createPtrRecords: "true"
+dnsInitializeIntervalSeconds: 180
 
 mgrJob:
   schedule:
@@ -122,3 +123,9 @@ localRecords: []
 # localRecords:
 # - name: "fake3.host.net"
 #   ip: "10.12.10.10"
+
+# NOTE:  The commented records.json.gz below is a base64 encoded gzip file that
+#        unpacks to an empty list of [] and can be used to reset the configmap.
+# binaryData:
+#   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
+host_records_gzip: "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"

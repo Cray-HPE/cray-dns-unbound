@@ -9,7 +9,7 @@ metadata:
 # binaryData:
 #   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
 binaryData:
-  records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
+  records.json.gz: {{ .Values.host_records_gzip }}
 data:
   unbound.conf: |-
     server:
@@ -30,9 +30,9 @@ data:
         statistics-interval: {{ .Values.statsInterval }}
         statistics-cumulative: {{ .Values.statsCumulative }}
         # Minimum lifetime of cache entries in seconds
-        cache-min-ttl: 300
+        cache-min-ttl: 180
         # Maximum lifetime of cached entries
-        cache-max-ttl: 14400
+        cache-max-ttl: 3600
         prefetch: yes
         prefetch-key: yes
         # Optimisations
