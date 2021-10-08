@@ -27,6 +27,7 @@ spec:
         runAsUser: 100
         runAsGroup: 101
         fsGroup: 101
+      priorityClassName: csm-high-priority-service
       containers:
       - name: unbound
         image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
@@ -38,6 +39,12 @@ spec:
         env:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "{{ .Values.containerConfigDirectory }}"
+        - name: UNBOUND_CONFIGMAP_DIRECTORY
+          value: "{{ .Values.containerConfigMapDataDirectory }}"
+        - name: UNBOUND_CREATE_PTR_RECORDS
+          value: "{{ .Values.createPtrRecords }}"
+        - name: DNS_INITIALIZE_INTERVAL_SECONDS
+          value: "{{ .Values.dnsInitializeIntervalSeconds }}"
         ports:
         - name: udp
           containerPort: {{ .Values.serverPort }}
@@ -46,12 +53,10 @@ spec:
           containerPort: {{ .Values.serverPort }}
           protocol: TCP
         volumeMounts:
-        - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}/unbound.conf"
-          subPath: unbound.conf
-        - name: unbound
-          mountPath: "{{ .Values.containerConfigDirectory }}/records.json.gz"
-          subPath: records.json.gz
+        - name: {{ template "cray-dns-unbound.fullname" . }}-data
+          mountPath: "{{ .Values.containerConfigMapDataDirectory }}"
+        - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
+          mountPath: "{{ .Values.containerConfigMapJobsDirectory }}"
         livenessProbe:
           exec:
             command:
@@ -72,14 +77,13 @@ spec:
           successThreshold: 3
           timeoutSeconds: 1
       volumes:
-      - name: unbound
+      - name: {{ template "cray-dns-unbound.fullname" . }}-data
         configMap:
           name: {{ template "cray-dns-unbound.fullname" . }}
-          items:
-          - key: unbound.conf
-            path: unbound.conf
-          - key: records.json.gz
-            path: records.json.gz
+      - name: {{ template "cray-dns-unbound.fullname" . }}-jobs
+        configMap:
+          defaultMode: 0777
+          name: {{ template "cray-dns-unbound.fullname" . }}-jobs
 {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
