@@ -27,7 +27,6 @@ spec:
         runAsUser: 100
         runAsGroup: 101
         fsGroup: 101
-      priorityClassName: csm-high-priority-service
       containers:
       - name: unbound
         image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
