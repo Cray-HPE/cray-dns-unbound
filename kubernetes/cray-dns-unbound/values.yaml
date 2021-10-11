@@ -28,7 +28,7 @@ containerConfigDirectory: /etc/unbound
 containerConfigMapDataDirectory: /configmap
 containerConfigMapJobsDirectory: /srv/unbound
 createPtrRecords: "true"
-dnsInitializeIntervalSeconds: 180
+dnsInitializeIntervalSeconds: 90
 
 mgrJob:
   schedule:
