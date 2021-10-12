@@ -16,7 +16,6 @@ keaApiEndpoint: http://cray-dhcp-kea-api:8000
 
 cray-service:
   #priorityClassName: "csm-high-priority-service"
-  replicas: 3
   type: deployment
   nameOverride: cray-dns-unbound
   podAnnotations:
@@ -26,6 +25,7 @@ cray-service:
     rollingUpdate:
       maxSurge: 4
       maxUnavailable: 0
+    replicas: 3
   containers:
     cray-dns-unbound:
       name: cray-dns-unbound
@@ -48,7 +48,7 @@ cray-service:
         - name: DNS_INITIALIZE_INTERVAL_SECONDS
           value: "90"
         - name: UNBOUND_CONTROL_INTERFACE
-          values: "9167"
+          value: "9167"
 
       ports:
         - name: udp
