@@ -20,12 +20,12 @@ cray-service:
   nameOverride: cray-dns-unbound
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
+  replicas: 3
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 4
       maxUnavailable: 0
-    replicas: 3
   containers:
     cray-dns-unbound:
       name: cray-dns-unbound
