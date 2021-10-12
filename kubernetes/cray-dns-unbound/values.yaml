@@ -14,11 +14,16 @@ cache: "2"
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
 cray-service:
-  priorityClassName: "csm-high-priority-service"
+  #priorityClassName: "csm-high-priority-service"
   type: deployment
   nameOverride: cray-dns-unbound
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 4
+      maxUnavailable: 0
   containers:
     cray-dns-unbound:
       name: cray-dns-unbound
