@@ -47,6 +47,9 @@ cray-service:
           value: "true"
         - name: DNS_INITIALIZE_INTERVAL_SECONDS
           value: "90"
+        - name: UNBOUND_CONTROL_INTERFACE
+          values: "9167"
+
       ports:
         - name: udp
           containerPort: 5053
@@ -67,7 +70,7 @@ cray-service:
           command:
             - "nslookup"
             - "health.check.unbound"
-            - "127.0.0.1:{{ .Values.serverPort }}"
+            - "127.0.0.1:5053"
         initialDelaySeconds: 30
         timeoutSeconds: 2
       readinessProbe:
@@ -77,7 +80,7 @@ cray-service:
             - "packages.local"
             # will need to restore for pdns cutover
             #- "health.check.unbound"
-            - "127.0.0.1:{{ .Values.serverPort }}"
+            - "127.0.0.1:5053"
         failureThreshold: 1
         initialDelaySeconds: 30
         periodSeconds: 5
