@@ -1,7 +1,6 @@
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
 
-
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
@@ -9,12 +8,15 @@ powerDNSServerIp: 10.92.100.85
 
 replicaCount: 3
 
-# remember to match this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu
+# remember to match cache and threads this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu in multiples of 2
 cache: "2"
+threads: "2"
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
+
 cray-service:
   #priorityClassName: "csm-high-priority-service"
+  replicas: 3
   type: deployment
   nameOverride: cray-dns-unbound
   podAnnotations:

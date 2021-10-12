@@ -24,7 +24,7 @@ data:
         use-syslog: no
         logfile: ""
         access-control: 127.0.0.1/32 allow
-        num-threads: {{ .Values.cpu }}
+        num-threads: {{ .Values.threads }}
         verbosity: {{ .Values.verbosity }}
         log-queries: no
         statistics-interval: {{ .Values.statsInterval }}
