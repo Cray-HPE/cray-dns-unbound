@@ -24,7 +24,7 @@ data:
         use-syslog: no
         logfile: ""
         access-control: 127.0.0.1/32 allow
-        num-threads: {{ .Values.resources.requests.cpu }}
+        num-threads: {{ .Values.cpu }}
         verbosity: {{ .Values.verbosity }}
         log-queries: no
         statistics-interval: {{ .Values.statsInterval }}
@@ -36,10 +36,10 @@ data:
         prefetch: yes
         prefetch-key: yes
         # Optimisations
-        msg-cache-slabs: {{ .Values.resources.requests.cpu }}
-        rrset-cache-slabs: {{ .Values.resources.requests.cpu }}
-        infra-cache-slabs: {{ .Values.resources.requests.cpu }}
-        key-cache-slabs: {{ .Values.resources.requests.cpu }}
+        msg-cache-slabs: {{ .Values.cache }}
+        rrset-cache-slabs: {{ .Values.cache }}
+        infra-cache-slabs: {{ .Values.cache }}
+        key-cache-slabs: {{ .Values.cache }}
         # increase memory size of the cache
         rrset-cache-size: 1024m
         msg-cache-size: 512m
