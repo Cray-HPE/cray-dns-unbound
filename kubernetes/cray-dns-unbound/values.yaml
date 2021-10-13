@@ -115,35 +115,8 @@ dnsUnboundExporter:
     metricsRelabelings: {}
     relabelings: {}
 
-
-#####
-# to be removed
-
-#global:
-#  appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
-
-#replicaCount: 3
-
-#containerConfigMapDataDirectory: /configmap
-#containerConfigMapJobsDirectory: /srv/unbound
-#createPtrRecords: "true"
-#dnsInitializeIntervalSeconds: 90
-
-#resources:
-#  requests:
-#    cpu: "2"
-#    memory: "4Gi"
-#  limits:
-#    cpu: "4"
-#    memory: 8Gi
-#nodeSelector: {}
-#tolerations: []
-#affinity: {}
-
-#####
-
 cray-service:
-  #priorityClassName: "csm-high-priority-service"
+  priorityClassName: "csm-high-priority-service"
   type: deployment
   nameOverride: cray-dns-unbound
   podAnnotations:
