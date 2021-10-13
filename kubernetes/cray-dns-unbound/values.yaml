@@ -1,18 +1,146 @@
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
-
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
 powerDNSServerIp: 10.92.100.85
-
-replicaCount: 3
 
 # remember to match cache and threads this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu in multiples of 2
 cache: "2"
 threads: "2"
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
+
+# Controls which IP address ranges unbound will allow queries from.
+# If you want to use unbound as an upstream for kube-dns, or allow other pods
+# to query the resolver directly, you'll at least need to allow the
+# clusterIpV4Cidr range.
+#
+#
+# Following are Shasta subnets beginning v1.3
+# HMN          - 10.254.0.0/17
+# NMN          - 10.252.0.0/17
+# CABINETS HMN - 10.104/16
+# CABINETS NMN - 10.100/16 (not a typo)
+# METALLB HMN  - 10.94.100/24
+# METALLB NMN  - 10.92.100/24
+allowedIpRanges:
+  - "10.0.0.0/8"
+  - "127.0.0.0/8"
+
+# You can set as many forward zones as needed by specifying the zone name
+# and forward hosts. Forward hosts can be set by hostname or ip.
+
+forwardZones: []
+  # This will be central dns
+  # - name: "."
+  #   forwardIps:
+  #     - 172.30.84.40
+  # - name: "craycray.info"
+  #   forwardIps:
+  #     - "10.1.92.70"
+
+stubZones:
+  - name: 10.in-addr.arpa.
+    stubIps:
+      - "10.92.100.85"
+
+# Local resolution for Shasta zones was moved to the template (CASMNET-719)
+# Additional local zones can be defined here.
+
+localZones:
+  # - name: "can."
+  #   localType: static
+  - name: "10.in-addr.arpa."
+    localType: nodefault
+
+# Unbound can store DNS records in a "local zone." This facility can be used to
+# assign context-specific names to a given IP address, and could also be used for
+# private DNS if you don't want or have an external resolver.
+
+localRecords: []
+# localRecords:
+# - name: "fake3.host.net"
+#   ip: "10.12.10.10"
+
+# NOTE:  The commented records.json.gz below is a base64 encoded gzip file that
+#        unpacks to an empty list of [] and can be used to reset the configmap.
+# binaryData:
+#   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
+host_records_gzip: "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"
+
+
+coreDNS:
+  forwardToUnbound: true
+  namespace: kube-system
+  configMapName: coredns
+  deploymentName: coredns
+
+imagesHost: dtr.dev.cray.com
+image:
+  repository: cray/cray-dns-unbound
+  pullPolicy: IfNotPresent
+infra_cache_numhosts: "1000000"
+verbosity: 0
+statsInterval: 0
+statsCumulative: "no"
+serverPort: 5053
+exporterPort: 9167
+containerConfigDirectory: /etc/unbound
+
+mgrJob:
+  schedule:
+    minute: "*/3"
+    hour: "*"
+    day_of_month: "*"
+    month: "*"
+    day_of_week: "*"
+
+dnsUnboundExporter:
+  enabled: true
+  service:
+    namespace: services
+    port: 9167
+    targetPort: 9167
+    selector:
+      app.kubernetes.io/name: cray-dns-unbound
+  serviceMonitor:
+    namespace: sysmgmt-health
+    matchNamespace:
+    - services
+    interval: 59s
+    scrapeTimeout: 50s
+    scheme: http
+    port: exporter
+    metricsRelabelings: {}
+    relabelings: {}
+
+
+#####
+# to be removed
+
+#global:
+#  appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
+
+#replicaCount: 3
+
+#containerConfigMapDataDirectory: /configmap
+#containerConfigMapJobsDirectory: /srv/unbound
+#createPtrRecords: "true"
+#dnsInitializeIntervalSeconds: 90
+
+#resources:
+#  requests:
+#    cpu: "2"
+#    memory: "4Gi"
+#  limits:
+#    cpu: "4"
+#    memory: 8Gi
+#nodeSelector: {}
+#tolerations: []
+#affinity: {}
+
+#####
 
 cray-service:
   #priorityClassName: "csm-high-priority-service"
@@ -97,123 +225,3 @@ cray-service:
       configMap:
         defaultMode: 0777
         name: cray-dns-unbound-jobs
-
-
-coreDNS:
-  forwardToUnbound: true
-  namespace: kube-system
-  configMapName: coredns
-  deploymentName: coredns
-
-imagesHost: dtr.dev.cray.com
-image:
-  repository: cray/cray-dns-unbound
-  pullPolicy: IfNotPresent
-infra_cache_numhosts: "1000000"
-verbosity: 0
-statsInterval: 0
-statsCumulative: "no"
-serverPort: 5053
-exporterPort: 9167
-containerConfigDirectory: /etc/unbound
-#containerConfigMapDataDirectory: /configmap
-#containerConfigMapJobsDirectory: /srv/unbound
-#createPtrRecords: "true"
-#dnsInitializeIntervalSeconds: 90
-
-mgrJob:
-  schedule:
-    minute: "*/3"
-    hour: "*"
-    day_of_month: "*"
-    month: "*"
-    day_of_week: "*"
-
-dnsUnboundExporter:
-  enabled: true
-  service:
-    namespace: services
-    port: 9167
-    targetPort: 9167
-    selector:
-      app.kubernetes.io/name: cray-dns-unbound
-  serviceMonitor:
-    namespace: sysmgmt-health
-    matchNamespace:
-    - services
-    interval: 59s
-    scrapeTimeout: 50s
-    scheme: http
-    port: exporter
-    metricsRelabelings: {}
-    relabelings: {}
-
-
-#resources:
-#  requests:
-#    cpu: "2"
-#    memory: "4Gi"
-#  limits:
-#    cpu: "4"
-#    memory: 8Gi
-#nodeSelector: {}
-#tolerations: []
-#affinity: {}
-
-# Controls which IP address ranges unbound will allow queries from.
-# If you want to use unbound as an upstream for kube-dns, or allow other pods
-# to query the resolver directly, you'll at least need to allow the
-# clusterIpV4Cidr range.
-#
-#
-# Following are Shasta subnets beginning v1.3
-# HMN          - 10.254.0.0/17
-# NMN          - 10.252.0.0/17
-# CABINETS HMN - 10.104/16
-# CABINETS NMN - 10.100/16 (not a typo)
-# METALLB HMN  - 10.94.100/24
-# METALLB NMN  - 10.92.100/24
-allowedIpRanges:
-  - "10.0.0.0/8"
-  - "127.0.0.0/8"
-
-# You can set as many forward zones as needed by specifying the zone name
-# and forward hosts. Forward hosts can be set by hostname or ip.
-
-forwardZones: []
-  # This will be central dns
-  # - name: "."
-  #   forwardIps:
-  #     - 172.30.84.40
-  # - name: "craycray.info"
-  #   forwardIps:
-  #     - "10.1.92.70"
-
-stubZones:
-  - name: 10.in-addr.arpa.
-    stubIps:
-      - "10.92.100.85"
-
-# Local resolution for Shasta zones was moved to the template (CASMNET-719)
-# Additional local zones can be defined here.
-
-localZones:
-  # - name: "can."
-  #   localType: static
-  - name: "10.in-addr.arpa."
-    localType: nodefault
-
-# Unbound can store DNS records in a "local zone." This facility can be used to
-# assign context-specific names to a given IP address, and could also be used for
-# private DNS if you don't want or have an external resolver.
-
-localRecords: []
-# localRecords:
-# - name: "fake3.host.net"
-#   ip: "10.12.10.10"
-
-# NOTE:  The commented records.json.gz below is a base64 encoded gzip file that
-#        unpacks to an empty list of [] and can be used to reset the configmap.
-# binaryData:
-#   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
-host_records_gzip: "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"
