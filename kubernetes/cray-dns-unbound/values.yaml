@@ -1,76 +1,15 @@
 global:
   appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
-
-
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
 powerDNSServerIp: 10.92.100.85
 
-replicaCount: 3
+# remember to match cache and threads this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu in multiples of 2
+cache: "2"
+threads: "2"
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
-
-coreDNS:
-  forwardToUnbound: true
-  namespace: kube-system
-  configMapName: coredns
-  deploymentName: coredns
-
-imagesHost: dtr.dev.cray.com
-image:
-  repository: cray/cray-dns-unbound
-  pullPolicy: IfNotPresent
-infra_cache_numhosts: "1000000"
-verbosity: 0
-statsInterval: 0
-statsCumulative: "no"
-serverPort: 5053
-exporterPort: 9167
-containerConfigDirectory: /etc/unbound
-containerConfigMapDataDirectory: /configmap
-containerConfigMapJobsDirectory: /srv/unbound
-createPtrRecords: "true"
-dnsInitializeIntervalSeconds: 90
-
-mgrJob:
-  schedule:
-    minute: "*/3"
-    hour: "*"
-    day_of_month: "*"
-    month: "*"
-    day_of_week: "*"
-
-dnsUnboundExporter:
-  enabled: true
-  service:
-    namespace: services
-    port: 9167
-    targetPort: 9167
-    selector:
-      app.kubernetes.io/name: cray-dns-unbound
-  serviceMonitor:
-    namespace: sysmgmt-health
-    matchNamespace:
-    - services
-    interval: 59s
-    scrapeTimeout: 50s
-    scheme: http
-    port: exporter
-    metricsRelabelings: {}
-    relabelings: {}
-
-
-resources:
-  requests:
-    cpu: "2"
-    memory: "4Gi"
-  limits:
-    cpu: "4"
-    memory: 8Gi
-nodeSelector: {}
-tolerations: []
-affinity: {}
 
 # Controls which IP address ranges unbound will allow queries from.
 # If you want to use unbound as an upstream for kube-dns, or allow other pods
@@ -129,3 +68,133 @@ localRecords: []
 # binaryData:
 #   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
 host_records_gzip: "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"
+
+
+coreDNS:
+  forwardToUnbound: true
+  namespace: kube-system
+  configMapName: coredns
+  deploymentName: coredns
+
+imagesHost: dtr.dev.cray.com
+image:
+  repository: cray/cray-dns-unbound
+  pullPolicy: IfNotPresent
+infra_cache_numhosts: "1000000"
+verbosity: 0
+statsInterval: 0
+statsCumulative: "no"
+serverPort: 5053
+exporterPort: 9167
+containerConfigDirectory: /etc/unbound
+
+mgrJob:
+  schedule:
+    minute: "*/3"
+    hour: "*"
+    day_of_month: "*"
+    month: "*"
+    day_of_week: "*"
+
+dnsUnboundExporter:
+  enabled: true
+  service:
+    namespace: services
+    port: 9167
+    targetPort: 9167
+    selector:
+      app.kubernetes.io/name: cray-dns-unbound
+  serviceMonitor:
+    namespace: sysmgmt-health
+    matchNamespace:
+    - services
+    interval: 59s
+    scrapeTimeout: 50s
+    scheme: http
+    port: exporter
+    metricsRelabelings: {}
+    relabelings: {}
+
+cray-service:
+  priorityClassName: "csm-high-priority-service"
+  type: deployment
+  nameOverride: cray-dns-unbound
+  podAnnotations:
+    traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
+  replicaCount: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 4
+      maxUnavailable: 0
+  containers:
+    cray-dns-unbound:
+      name: cray-dns-unbound
+      image:
+        repository: "cray/cray-dns-unbound"
+      resources:
+        requests:
+          cpu: "2"
+          memory: "4Gi"
+        limits:
+          cpu: "4"
+          memory: 8Gi
+      env:
+        - name: UNBOUND_CONFIG_DIRECTORY
+          value: "/etc/unbound"
+        - name: UNBOUND_CONFIGMAP_DIRECTORY
+          value: "/configmap"
+        - name: UNBOUND_CREATE_PTR_RECORDS
+          value: "true"
+        - name: DNS_INITIALIZE_INTERVAL_SECONDS
+          value: "90"
+        - name: UNBOUND_CONTROL_INTERFACE
+          value: "9167"
+
+      ports:
+        - name: udp
+          containerPort: 5053
+          protocol: UDP
+        - name: tcp
+          containerPort: 5053
+          protocol: TCP
+        - name: exporter
+          containerPort: 9167
+          protocol: TCP
+      volumeMounts:
+        - name: cray-dns-unbound-data
+          mountPath: "/configmap"
+        - name: cray-dns-unbound-jobs
+          mountPath: "/srv/unbound"
+      livenessProbe:
+        exec:
+          command:
+            - "nslookup"
+            - "health.check.unbound"
+            - "127.0.0.1:5053"
+        initialDelaySeconds: 30
+        timeoutSeconds: 2
+      readinessProbe:
+        exec:
+          command:
+            - "nslookup"
+            - "packages.local"
+            # will need to restore for pdns cutover
+            #- "health.check.unbound"
+            - "127.0.0.1:5053"
+        failureThreshold: 1
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        successThreshold: 3
+        timeoutSeconds: 1
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+  volumes:
+    - name: cray-dns-unbound-data
+      configMap:
+        name: cray-dns-unbound
+    - name: cray-dns-unbound-jobs
+      configMap:
+        defaultMode: 0777
+        name: cray-dns-unbound-jobs
