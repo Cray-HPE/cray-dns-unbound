@@ -90,7 +90,7 @@ containerConfigDirectory: /etc/unbound
 
 mgrJob:
   schedule:
-    minute: "*/3"
+    minute: "*/2"
     hour: "*"
     day_of_month: "*"
     month: "*"
@@ -147,7 +147,7 @@ cray-service:
         - name: UNBOUND_CREATE_PTR_RECORDS
           value: "true"
         - name: DNS_INITIALIZE_INTERVAL_SECONDS
-          value: "90"
+          value: "120"
         - name: UNBOUND_CONTROL_INTERFACE
           value: "9167"
 
