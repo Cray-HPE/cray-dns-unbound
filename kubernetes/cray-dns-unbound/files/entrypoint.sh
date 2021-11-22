@@ -2,9 +2,9 @@
 
 set -e
 
+sleep 5
+
 if [[ "$@" == "" ]]; then
-  /srv/unbound/initialize.py
-  unbound -c ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf &
   while true; do /srv/unbound/initialize.py; sleep ${DNS_INITIALIZE_INTERVAL_SECONDS}; done
 else
   $@
