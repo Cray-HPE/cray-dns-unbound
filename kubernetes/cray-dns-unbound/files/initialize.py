@@ -21,6 +21,14 @@ check_config_loaded = os.path.isfile(config_load_file)
 folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
 config_load_id = ''
 reload_configs = False
+unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] + , '/unbound.conf &')
+
+# make sure unbound pid is running
+try:
+    unbound_pid = int(subprocess.check_output(["pidof", "unbound"]))
+except Exception as err:
+    print(f'Unbound PID not detected.  Starting unbound')
+    os.system(unbound_cmd)
 
 if not check_config_loaded:
     reload_configs = True

@@ -30,11 +30,11 @@ containerConfigDirectory: /etc/unbound
 containerConfigMapDataDirectory: /configmap
 containerConfigMapJobsDirectory: /srv/unbound
 createPtrRecords: "true"
-dnsInitializeIntervalSeconds: 180
+dnsInitializeIntervalSeconds: 120
 
 mgrJob:
   schedule:
-    minute: "*/3"
+    minute: "*/2"
     hour: "*"
     day_of_month: "*"
     month: "*"
