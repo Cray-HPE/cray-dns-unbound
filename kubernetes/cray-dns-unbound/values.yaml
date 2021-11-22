@@ -147,7 +147,7 @@ cray-service:
         - name: UNBOUND_CREATE_PTR_RECORDS
           value: "true"
         - name: DNS_INITIALIZE_INTERVAL_SECONDS
-          value: "120"
+          value: "90"
         - name: UNBOUND_CONTROL_INTERFACE
           value: "9167"
 
