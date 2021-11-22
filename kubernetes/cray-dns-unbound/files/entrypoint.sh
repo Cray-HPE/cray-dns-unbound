@@ -2,7 +2,7 @@
 
 set -ex
 
-sleep 5
+sleep 30
 
 if [[ "$@" == "" ]]; then
   while true; do /srv/unbound/initialize.py; sleep ${DNS_INITIALIZE_INTERVAL_SECONDS}; done &
