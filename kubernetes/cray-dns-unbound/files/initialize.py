@@ -21,7 +21,7 @@ check_config_loaded = os.path.isfile(config_load_file)
 folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
 config_load_id = ''
 reload_configs = False
-unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] + , '/unbound.conf &')
+unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] +  '/unbound.conf &')
 
 # make sure unbound pid is running
 try:
