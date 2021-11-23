@@ -33,6 +33,10 @@ spec:
       - name: unbound
         image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        command:
+          - "sh"
+          - "-c"
+          - "/srv/unbound/entrypoint.sh"
 {{- with .Values.resources }}
         resources:
 {{ toYaml . | indent 10 }}
