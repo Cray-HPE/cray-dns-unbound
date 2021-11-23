@@ -76,7 +76,7 @@ coreDNS:
   configMapName: coredns
   deploymentName: coredns
 
-imagesHost: dtr.dev.cray.com
+imagesHost: artifactory.algol60.net
 image:
   repository: cray/cray-dns-unbound
   pullPolicy: IfNotPresent
@@ -90,7 +90,7 @@ containerConfigDirectory: /etc/unbound
 
 mgrJob:
   schedule:
-    minute: "*/3"
+    minute: "*/2"
     hour: "*"
     day_of_month: "*"
     month: "*"
