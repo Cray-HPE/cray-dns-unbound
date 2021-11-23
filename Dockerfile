@@ -48,4 +48,3 @@ EXPOSE 80/UDP
 EXPOSE 80/TCP
 
 USER unbound
-ENTRYPOINT ["/srv/unbound/entrypoint.sh"]
