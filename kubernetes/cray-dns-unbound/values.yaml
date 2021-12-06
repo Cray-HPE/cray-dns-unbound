@@ -1,3 +1,5 @@
+domain_name: example  # removed before packaging
+
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 

@@ -12,8 +12,6 @@ jobs:
     uses: Cray-HPE/.github/.github/workflows/charts-lint-test-scan.yml@main
     with:
       lint-charts: ${{ github.event_name == 'pull_request' }}
-      lint-pre-script: |
-        echo "domain_name: example.com" >> kubernetes/cray-dns-unbound/values.yaml
       test-charts: false
       scan-chart-snyk-args: "--severity-threshold=high --policy-path=kubernetes/.snyk"
     secrets:
