@@ -51,7 +51,7 @@ ${CHARTDIR}/.packaged/${NAME}-${CHART_VERSION}.tgz: ${CHARTDIR}/.packaged
 	CMD="dep up ${CHARTDIR}/${NAME}" $(MAKE) helm
 	sed -e '/^domain_name: example.com /d' -i ${CHARTDIR}/${NAME}/values.yaml
 	CMD="package ${CHARTDIR}/${NAME} -d ${CHARTDIR}/.packaged" $(MAKE) helm
-	git restore ${CHARTDIR}/${NAME}/values.yaml
+	git reset HEAD ${CHARTDIR}/${NAME}/values.yaml
 
 ${CHARTDIR}/.packaged:
 	mkdir -p ${CHARTDIR}/.packaged
