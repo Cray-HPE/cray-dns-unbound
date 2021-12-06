@@ -101,7 +101,7 @@ dnsUnboundExporter:
   serviceMonitor:
     namespace: sysmgmt-health
     matchNamespace:
-    - services
+      - services
     interval: 59s
     scrapeTimeout: 50s
     scheme: http
@@ -175,7 +175,7 @@ cray-service:
             - "nslookup"
             - "packages.local"
             # will need to restore for pdns cutover
-            #- "health.check.unbound"
+            # - "health.check.unbound"
             - "127.0.0.1:5053"
         failureThreshold: 1
         initialDelaySeconds: 30
@@ -193,3 +193,8 @@ cray-service:
       configMap:
         defaultMode: 0777
         name: cray-dns-unbound-jobs
+global:
+  chart:
+    name: cray-dns-unbound
+    version: 0.6.10
+  appVersion: 0.6.10

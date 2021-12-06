@@ -3,8 +3,8 @@ apiVersion: v2
 name: cray-dns-unbound
 version: 0.6.10
 sources:
-- https://github.com/NLnetLabs/unbound
-- https://gitlab.com/klutchell/unbound
+  - https://github.com/NLnetLabs/unbound
+  - https://gitlab.com/klutchell/unbound
 description: Kubernetes resources for Cray DNS resolver using Unbound
 home: https://github.com/Cray-HPE/cray-dns-unbound
 dependencies:
@@ -15,4 +15,7 @@ maintainers:
   - name: dle-hpe
 appVersion: 0.6.10
 annotations:
+  artifacthub.io/images: |
+    - name: cray-dns-unbound
+      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.6.10
   artifacthub.io/license: MIT

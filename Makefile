@@ -12,6 +12,8 @@ HELM_IMAGE ?= artifactory.algol60.net/docker.io/alpine/helm:3.7.1
 HELM_UNITTEST_IMAGE ?= artifactory.algol60.net/docker.io/quintush/helm-unittest
 HELM_DOCS_IMAGE ?= artifactory.algol60.net/docker.io/jnorwood/helm-docs:v1.5.0
 
+SHELL=/usr/bin/env bash -euo pipefail
+
 all : image chart
 
 image:
@@ -21,6 +23,7 @@ chart: chart-metadata chart-package chart-test
 
 chart-metadata:
 	docker pull ${CHART_METADATA_IMAGE}
+	# Update metadata in Chart.yaml and values.yaml
 	docker run --rm \
 		--user $(shell id -u):$(shell id -g) \
 		-v ${PWD}/${CHARTDIR}/${NAME}:/chart \
@@ -28,12 +31,11 @@ chart-metadata:
 		--version "${CHART_VERSION}" --app-version "${VERSION}" \
 		-i ${NAME} ${IMAGE}:${VERSION} \
 		--cray-service-globals
-	docker run --rm \
-		--user $(shell id -u):$(shell id -g) \
-		-v ${PWD}/${CHARTDIR}/${NAME}:/chart \
-		-w /chart \
-		${YQ_IMAGE} \
-		eval -Pi '.cray-service.containers.cray-dns-unbound.image.repository = "${IMAGE}"' values.yaml
+	# Update image refs in values.yaml; diff/patch trickery is to cope with whitespace issues in yq/go-yaml, see https://github.com/mikefarah/yq/issues/515
+	diff --ignore-space-change --ignore-all-space --ignore-blank-lines \
+		<(docker run --rm -i ${YQ_IMAGE} eval '.' - < "${CHARTDIR}/${NAME}/values.yaml") \
+		<(docker run --rm -i ${YQ_IMAGE} eval '.cray-service.containers.cray-dns-unbound.image.repository = "${IMAGE}"' - < "${CHARTDIR}/${NAME}/values.yaml") \
+		| patch "${CHARTDIR}/${NAME}/values.yaml"
 
 helm:
 	docker run --rm \
@@ -60,7 +62,7 @@ chart-test:
 	docker run --rm -v ${PWD}/${CHARTDIR}:/apps ${HELM_UNITTEST_IMAGE} -3 ${NAME}
 
 chart-images: ${CHARTDIR}/.packaged/${NAME}-${CHART_VERSION}.tgz
-	{ CMD="template release $< --dry-run --replace --dependency-update" $(MAKE) -s helm; \
+	{ CMD="template release $< --dry-run --replace --dependency-update --set domain_name=example.com" $(MAKE) -s helm; \
 	  echo '---' ; \
 	  CMD="show chart $<" $(MAKE) -s helm | docker run --rm -i $(YQ_IMAGE) e -N '.annotations."artifacthub.io/images"' - ; \
 	} | docker run --rm -i $(YQ_IMAGE) e -N '.. | .image? | select(.)' - | sort -u
@@ -77,4 +79,5 @@ chart-gen-docs:
 	    helm-docs --chart-search-root=$(CHARTDIR)
 
 clean:
+	$(RM) ${CHARTDIR}/${NAME}/Chart.lock
 	$(RM) -r ${CHARTDIR}/.packaged .helm
