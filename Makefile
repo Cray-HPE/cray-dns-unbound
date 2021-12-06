@@ -31,11 +31,8 @@ chart-metadata:
 		--version "${CHART_VERSION}" --app-version "${VERSION}" \
 		-i ${NAME} ${IMAGE}:${VERSION} \
 		--cray-service-globals
-	# Update image refs in values.yaml; diff/patch trickery is to cope with whitespace issues in yq/go-yaml, see https://github.com/mikefarah/yq/issues/515
-	diff --ignore-space-change --ignore-all-space --ignore-blank-lines \
-		<(docker run --rm -i ${YQ_IMAGE} eval '.' - < "${CHARTDIR}/${NAME}/values.yaml") \
-		<(docker run --rm -i ${YQ_IMAGE} eval '.cray-service.containers.cray-dns-unbound.image.repository = "${IMAGE}"' - < "${CHARTDIR}/${NAME}/values.yaml") \
-		| patch "${CHARTDIR}/${NAME}/values.yaml"
+	# Update default image respository in values.yaml
+	sed -e 's,repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound,repository: $(IMAGE),g' -i "${CHARTDIR}/${NAME}/values.yaml"
 
 helm:
 	docker run --rm \
