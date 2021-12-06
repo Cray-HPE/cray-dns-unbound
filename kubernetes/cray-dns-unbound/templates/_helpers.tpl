@@ -47,14 +47,3 @@ app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
-
-{{/*
-Get an image prefix
-*/}}
-{{- define "cray-dns-unbound.image-prefix" -}}
-{{- if .imagesHost -}}
-{{- printf "%s/" .imagesHost -}}
-{{- else -}}
-{{- printf "" -}}
-{{- end -}}
-{{- end -}}

@@ -33,7 +33,7 @@ chart-metadata:
 		-v ${PWD}/${CHARTDIR}/${NAME}:/chart \
 		-w /chart \
 		${YQ_IMAGE} \
-		eval -Pi '.cray-service.containers.${NAME}.image.repository = "${IMAGE}"' values.yaml
+		eval -Pi '.cray-service.containers.cray-dns-unbound.image.repository = "${IMAGE}"' values.yaml
 
 helm:
 	docker run --rm \

@@ -25,7 +25,8 @@ spec:
           activeDeadlineSeconds: 1200
           containers:
           - name: manager
-            image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
+            image: {{ .Values.cray-service.containers.cray-dns-unbound.image.repository }}:{{ default .Chart.AppVersion .Values.cray-service.containers.cray-dns-unbound.image.tag }}
+            imagePullPolicy: {{ .Values.cray-service.containers.cray-dns-unbound.image.pullPolicy }}
             command: ["/srv/unbound/manager.py"]
             env:
             - name: KEA_API_ENDPOINT

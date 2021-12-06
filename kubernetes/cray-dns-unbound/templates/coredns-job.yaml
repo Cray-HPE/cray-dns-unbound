@@ -17,7 +17,8 @@ spec:
       serviceAccountName: {{ template "cray-dns-unbound.fullname" . }}-coredns
       containers:
       - name: coredns
-        image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
+        image: {{ .Values.cray-service.containers.cray-dns-unbound.image.repository }}:{{ default .Chart.AppVersion .Values.cray-service.containers.cray-dns-unbound.image.tag }}
+        imagePullPolicy: {{ .Values.cray-service.containers.cray-dns-unbound.image.pullPolicy }}
         command: ["/srv/unbound/coredns.py"]
         env:
         - name: NMN_LOAD_BALANCER_IP

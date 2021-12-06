@@ -1,5 +1,3 @@
-global:
-  appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
@@ -76,10 +74,6 @@ coreDNS:
   configMapName: coredns
   deploymentName: coredns
 
-imagesHost: artifactory.algol60.net
-image:
-  repository: cray/cray-dns-unbound
-  pullPolicy: IfNotPresent
 infra_cache_numhosts: "1000000"
 verbosity: 0
 statsInterval: 0
@@ -131,7 +125,8 @@ cray-service:
     cray-dns-unbound:
       name: cray-dns-unbound
       image:
-        repository: "cray/cray-dns-unbound"
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
+        pullPolicy: IfNotPresent
       resources:
         requests:
           cpu: "2"
