@@ -22,7 +22,7 @@ ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
 
-RUN apk add --no-cache bash python3 py-pip unbound=1.13.2-r2
+RUN apk add --no-cache bash python3 py-pip unbound=1.13.2-r0
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
