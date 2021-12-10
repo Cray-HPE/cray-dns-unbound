@@ -127,6 +127,7 @@ cray-service:
     rollingUpdate:
       maxSurge: 4
       maxUnavailable: 0
+  containers:
     cray-dns-unbound:
       name: cray-dns-unbound
       image:
@@ -138,14 +139,6 @@ cray-service:
         limits:
           cpu: "4"
           memory: 8Gi
-      containers:
-        lifecyle:
-          postStart:
-            exec:
-              command: [ "/bin/bash", "sleep 1" ]
-          preStop:
-            exec:
-              command: [ "/bin/bash", "kill `cat /etc/unbound/unbound.pid`","sleep 1" ]
       env:
         - name: UNBOUND_CONFIG_DIRECTORY
           value: "/etc/unbound"
@@ -157,6 +150,7 @@ cray-service:
           value: "90"
         - name: UNBOUND_CONTROL_INTERFACE
           value: "9167"
+
       ports:
         - name: udp
           containerPort: 5053
@@ -167,6 +161,10 @@ cray-service:
         - name: exporter
           containerPort: 9167
           protocol: TCP
+      lifecycle:
+        preStop:
+          exec:
+            command: [ "/bin/sh","-c","kill `cat /etc/unbound/unbound.pid`; sleep 10" ]
       volumeMounts:
         - name: cray-dns-unbound-data
           mountPath: "/configmap"
@@ -190,8 +188,8 @@ cray-service:
             - "127.0.0.1:5053"
         failureThreshold: 1
         initialDelaySeconds: 30
-        periodSeconds: 5
-        successThreshold: 3
+        periodSeconds: 1
+        successThreshold: 10
         timeoutSeconds: 1
       nodeSelector: {}
       affinity: {}
