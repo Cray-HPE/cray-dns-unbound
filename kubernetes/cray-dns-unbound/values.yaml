@@ -193,7 +193,7 @@ cray-service:
         name: cray-dns-unbound
     - name: cray-dns-unbound-jobs
       configMap:
-        defaultMode: 0777
+        defaultMode: 777
         name: cray-dns-unbound-jobs
 global:
   chart:
