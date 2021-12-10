@@ -125,6 +125,10 @@ cray-service:
       maxUnavailable: 0
   containers:
     cray-dns-unbound:
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        fsGroup: 101
       name: cray-dns-unbound
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
