@@ -16,18 +16,18 @@ RUN apt-get update && \
 
 # Pinned to alpine:3.13 because alpine:3.14+ requires Docker 20.10.0 or newer,
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
-FROM artifactory.algol60.net/docker.io/library/alpine:3.13
+FROM artifactory.algol60.net/docker.io/library/alpine:3.15
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
 
-RUN apk add --no-cache bash python3 py-pip unbound=1.13.2-r0
+RUN apk add --no-cache bash python3 py-pip unbound=1.13.2-r2
 
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
 
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.18.3/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
 
 RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
@@ -44,9 +44,9 @@ RUN chmod +x /srv/unbound/entrypoint.sh && \
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 RUN gzip ${UNBOUND_CONFIG_DIRECTORY}/records.json
 
-RUN chown -R unbound /srv/unbound
-RUN chown -R unbound /etc/unbound
-RUN chown -R unbound /var/run/unbound
+RUN chown -R unbound.unbound /srv/unbound
+RUN chown -R unbound.unbound /etc/unbound
+RUN chown -R unbound.unbound /var/run/unbound
 
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
