@@ -16,7 +16,7 @@ RUN apt-get update && \
 
 # Pinned to alpine:3.13 because alpine:3.14+ requires Docker 20.10.0 or newer,
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
-FROM artifactory.algol60.net/docker.io/library/alpine:3.15
+FROM artifactory.algol60.net/docker.io/library/alpine:3.13
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
