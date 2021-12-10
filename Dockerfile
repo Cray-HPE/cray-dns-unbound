@@ -44,13 +44,13 @@ RUN chmod +x /srv/unbound/entrypoint.sh && \
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 RUN gzip ${UNBOUND_CONFIG_DIRECTORY}/records.json
 
-RUN chown -R unbound.unbound /srv/unbound
-RUN chown -R unbound.unbound /etc/unbound
-RUN chown -R unbound.unbound /var/run/unbound
+RUN chown -R nobody /srv/unbound
+RUN chown -R nobody /etc/unbound
+RUN chown -R nobody /var/run/unbound
 
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
 EXPOSE 80/udp
 EXPOSE 80/tcp
-USER unbound
+USER nobody
 ENTRYPOINT ["/srv/unbound/entrypoint.sh"]
