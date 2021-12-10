@@ -113,10 +113,6 @@ dnsUnboundExporter:
 
 cray-service:
   priorityClassName: "csm-high-priority-service"
-  securityContext:
-    runAsUser: 100
-    runAsGroup: 101
-    fsGroup: 101
   type: deployment
   nameOverride: cray-dns-unbound
   podAnnotations:
