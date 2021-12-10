@@ -113,6 +113,10 @@ dnsUnboundExporter:
 
 cray-service:
   priorityClassName: "csm-high-priority-service"
+  securityContext:
+    runAsUser: 100
+    runAsGroup: 101
+    fsGroup: 101
   type: deployment
   nameOverride: cray-dns-unbound
   podAnnotations:
@@ -125,10 +129,6 @@ cray-service:
       maxUnavailable: 0
   containers:
     cray-dns-unbound:
-      securityContext:
-        runAsUser: 100
-        runAsGroup: 101
-        fsGroup: 101
       name: cray-dns-unbound
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
