@@ -27,7 +27,7 @@ RUN apk add --no-cache bash python3 py-pip unbound=1.13.2-r0
 RUN pip3 install --upgrade pip
 RUN pip3 install requests PyYAML
 
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.18.3/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
 
 RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
