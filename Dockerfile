@@ -18,7 +18,6 @@ RUN apt-get update && \
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/docker.io/library/alpine:3.13
 
-RUN adduser -S nobody -G nobody
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
@@ -46,13 +45,13 @@ RUN chmod +x /srv/unbound/entrypoint.sh && \
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 RUN gzip ${UNBOUND_CONFIG_DIRECTORY}/records.json
 
-RUN chown -R nobody /srv/unbound
-RUN chown -R nobody /etc/unbound
-RUN chown -R nobody /var/run/unbound
+RUN chown -R unbound /srv/unbound
+RUN chown -R unbound /etc/unbound
+RUN chown -R unbound /var/run/unbound
 
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
 EXPOSE 80/udp
 EXPOSE 80/tcp
-USER nobody
+USER unbound
 ENTRYPOINT ["/srv/unbound/entrypoint.sh"]
