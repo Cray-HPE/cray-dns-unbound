@@ -126,6 +126,10 @@ cray-service:
   containers:
     cray-dns-unbound:
       name: cray-dns-unbound
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
         pullPolicy: IfNotPresent
