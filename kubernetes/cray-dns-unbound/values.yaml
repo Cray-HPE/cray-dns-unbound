@@ -206,5 +206,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.0
-  appVersion: 0.7.0
+    version: 0.7.1
+  appVersion: 0.7.1

@@ -95,40 +95,6 @@ def get_kea_records(kea_response_json):
 
     return kea_records
 
-def concurrency_check():
-    # check number of unbound-manager running
-    # get pods
-    pod_query = subprocess.Popen(['kubectl', '-n', os.environ['KUBERNETES_NAMESPACE'],
-                                  'get', 'pods'],
-                                 stdout=subprocess.PIPE,
-                                 )
-
-    # grep out unbound-manager pods
-    grep = subprocess.Popen(['grep', 'unbound-manager'],
-                            stdin=pod_query.stdout,
-                            stdout=subprocess.PIPE,
-                            )
-    # exclude Completed unbound-manager pods
-    grep_exclude = subprocess.Popen(['grep', '-v', 'Completed'],
-                                    stdin=grep.stdout,
-                                    stdout=subprocess.PIPE,
-                                    )
-
-    wc = subprocess.Popen(['wc', '-l'],
-                          stdin=grep_exclude.stdout,
-                          stdout=subprocess.PIPE,
-                          )
-
-    unbound_manager_count_output = wc.stdout
-
-    # check to how many none Completed unbound-manager pods running
-    for line in unbound_manager_count_output:
-        converted_count = int(line.decode('utf-8').strip())
-        if converted_count > 1:
-            print('To many unbound-manager pods not completed.')
-            print('There are {} pods not completed, max limit 2'.format(converted_count))
-            print('Exiting gracefully.')
-            exit()
 #
 # Give istio-proxy channel a chance to be ready
 #
@@ -139,7 +105,7 @@ time.sleep(3)
 #
 ts = time.perf_counter()
 
-concurrency_check()
+api_errors = False
 
 te = time.perf_counter()
 print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
@@ -165,6 +131,8 @@ kea_response_json = remote_request('POST',
                                     kea_url,
                                     headers=kea_headers,
                                     data=kea_request)
+if len(kea_response_json) == 0:
+    api_errors = True
 
 # Retrieve cleansed records that are pointing to the correct location
 kea_records = get_kea_records(kea_response_json)
@@ -255,6 +223,10 @@ print('Gathered {0} total leases and reservations local and global ({1:.5f}s)'.f
 ts = time.perf_counter()
 smd_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
 smd_records = remote_request('GET', smd_request)
+
+if len(smd_records) == 0:
+    api_errors = True
+
 te = time.perf_counter()
 print('Queried SMD to find any xname records we need to set ({0:.5f}s)'.format(te-ts))
 print('Found {} records in SMD'.format(len(smd_records)))
@@ -323,6 +295,8 @@ ts = time.perf_counter()
 sls_request = 'http://cray-sls/v1/hardware'
 sls_records = remote_request('GET', sls_request)
 
+if len(sls_records) == 0:
+    api_errors = True
 
 #
 # 1. CASMINST-1114 PART1: Find nid names that are in kea and associate with their xname.
@@ -397,6 +371,10 @@ print('Merged new SLS Application and Management names into DNS data structure')
 ts = time.perf_counter()
 sls_request = 'http://cray-sls/v1/networks'
 sls_networks = remote_request('GET', sls_request, exit_on_error=True)
+
+if len(sls_networks) == 0:
+    api_errors = True
+
 te = time.perf_counter()
 print('Queried SLS to find Network records ({0:.5f})'.format(te-ts))
 print('Found {} SLS Network records.'.format(len(sls_networks)))
@@ -524,7 +502,7 @@ else:
 te = time.perf_counter()
 print('Comparing new and existing DNS records ({0:.5f})'.format(te-ts))
 
-if diffs:
+if not api_errors and diffs:
     ts = time.perf_counter()
     print('    Differences found.  Writing new DNS records to our configmap.')
     records_string = json.dumps(master_dns_records).replace('"', '\"') # String
@@ -539,5 +517,26 @@ if diffs:
 
     te = time.perf_counter()
     print('Merged records and reloaded configmap ({0:.5f}s)'.format(te-ts))
+elif api_errors and master_dns_records > existing_records:
+    ts = time.perf_counter()
+    print('    Differences found.  Writing new DNS records to our configmap.')
+    records_string = json.dumps(master_dns_records).replace('"', '\"') # String
+    records_string = codecs.encode(records_string, encoding='utf-8') # Bytes object
+    records_string = gzip.compress(records_string)
+    records_string = codecs.encode(records_string, encoding='base64')
+    configmap['binaryData']['records.json.gz'] = records_string
+    with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
+        yaml.dump(configmap, tmp, default_flow_style=False)
+        print("  Applying the configmap")
+        shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
+
+    te = time.perf_counter()
+    print('Merged records and reloaded configmap ({0:.5f}s)'.format(te-ts))
+elif api_errors and master_dns_records < existing_records:
+    ts = time.perf_counter()
+    print('    Differences found.  NOT writing DNS records to our configmap.')
+    print('    API errors and generated record was less than previous list')
+    te = time.perf_counter()
+    print('NO CHANGES to unbound configmap ({0:.5f}s)'.format(te-ts))
 else:
     print('    No differences found.  Skipping DNS update')
