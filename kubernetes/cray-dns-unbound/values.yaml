@@ -1,5 +1,5 @@
-global:
-  appVersion: "" # this value will get set in the pipeline, and will be the driver for our unbound container image tag
+domain_name: example  # removed before packaging
+
 nmnLoadBalancerIp: 10.92.100.225
 hmnLoadBalancerIp: 10.94.100.225
 
@@ -76,10 +76,6 @@ coreDNS:
   configMapName: coredns
   deploymentName: coredns
 
-imagesHost: artifactory.algol60.net
-image:
-  repository: cray/cray-dns-unbound
-  pullPolicy: IfNotPresent
 infra_cache_numhosts: "1000000"
 verbosity: 0
 statsInterval: 0
@@ -107,7 +103,7 @@ dnsUnboundExporter:
   serviceMonitor:
     namespace: sysmgmt-health
     matchNamespace:
-    - services
+      - services
     interval: 59s
     scrapeTimeout: 50s
     scheme: http
@@ -130,8 +126,13 @@ cray-service:
   containers:
     cray-dns-unbound:
       name: cray-dns-unbound
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
       image:
-        repository: "cray/cray-dns-unbound"
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
+        pullPolicy: IfNotPresent
       resources:
         requests:
           cpu: "2"
@@ -180,7 +181,7 @@ cray-service:
             - "nslookup"
             - "packages.local"
             # will need to restore for pdns cutover
-            #- "health.check.unbound"
+            # - "health.check.unbound"
             - "127.0.0.1:5053"
         failureThreshold: 1
         initialDelaySeconds: 30
@@ -198,3 +199,8 @@ cray-service:
       configMap:
         defaultMode: 0777
         name: cray-dns-unbound-jobs
+global:
+  chart:
+    name: cray-dns-unbound
+    version: 0.7.0
+  appVersion: 0.7.0
