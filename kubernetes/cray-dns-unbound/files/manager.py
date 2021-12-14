@@ -103,12 +103,12 @@ time.sleep(3)
 #
 # concurrency check
 #
-ts = time.perf_counter()
+#ts = time.perf_counter()
 
 api_errors = False
 
-te = time.perf_counter()
-print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
+#te = time.perf_counter()
+#print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
 
 #
 # Master data structure for DNS records which *must* exist
@@ -520,6 +520,7 @@ if not api_errors and diffs:
 elif api_errors and master_dns_records > existing_records:
     ts = time.perf_counter()
     print('    Differences found.  Writing new DNS records to our configmap.')
+    print('    API errors occured but generated more records than previous created.')
     records_string = json.dumps(master_dns_records).replace('"', '\"') # String
     records_string = codecs.encode(records_string, encoding='utf-8') # Bytes object
     records_string = gzip.compress(records_string)
@@ -534,7 +535,7 @@ elif api_errors and master_dns_records > existing_records:
     print('Merged records and reloaded configmap ({0:.5f}s)'.format(te-ts))
 elif api_errors and master_dns_records < existing_records:
     ts = time.perf_counter()
-    print('    Differences found.  NOT writing DNS records to our configmap.')
+    print('    Differences found.  NOT writing DNS records to configmap.')
     print('    API errors and generated record was less than previous list')
     te = time.perf_counter()
     print('NO CHANGES to unbound configmap ({0:.5f}s)'.format(te-ts))
