@@ -10,6 +10,8 @@ cache: "2"
 threads: "2"
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
+smdApiEndpoint: http://cray-smd
+slsApiEndpoint: http://cray-sls
 
 # Controls which IP address ranges unbound will allow queries from.
 # If you want to use unbound as an upstream for kube-dns, or allow other pods

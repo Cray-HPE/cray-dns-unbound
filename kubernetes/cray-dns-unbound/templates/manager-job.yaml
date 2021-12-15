@@ -31,6 +31,10 @@ spec:
             env:
             - name: KEA_API_ENDPOINT
               value: "{{ .Values.keaApiEndpoint }}"
+            - name: SMD_API_ENDPOINT
+              value: "{{ .Values.smdApiEndpoint }}"
+            - name: SLS_API_ENDPOINT
+              value: "{{ .Values.slsApiEndpoint }}"
             - name: KUBERNETES_UNBOUND_CONFIGMAP_NAME
               value: "{{ template "cray-dns-unbound.fullname" . }}"
             - name: KUBERNETES_NAMESPACE

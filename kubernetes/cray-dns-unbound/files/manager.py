@@ -18,7 +18,7 @@ from urllib.parse import urljoin
 import logging
 from tempfile import NamedTemporaryFile
 
-# globbals
+# globals
 log = logging.getLogger(__name__)
 log.setLevel(logging.WARN)
 
@@ -101,55 +101,6 @@ class APIRequest(object):
         return response
 
 #
-# Pretty print errors
-#
-#def on_error(err, exit=False):
-#    if exit:
-#        print('ERROR: {}'.format(err))
-#        sys.exit(1)
-#    else:
-#        print('NOTICE: {}'.format(err))
-
-
-#
-# Remote calls to Kea, SMD and SLS with wrapper for retry and exceptions
-#
-#def remote_request(remote_type, remote_url, headers=None, data=None, exit_on_error=False):
-#    connection_retries = 0
-#    max_connection_retries = 10
-#    wait_seconds_between_retries = 3
-#
-#    remote_response = None
-#    while True:
-#        try:
-#            json_data = json.dumps(data)
-#            response = requests.request(remote_type,
-#                                        url=remote_url,
-#                                        headers=headers,
-#                                        data=json_data)
-#            response.raise_for_status()
-#            remote_response = response.json()
-#            break
-#        except Exception as err:
-#            connection_retries += 1
-#            message = 'remote call to {}: {}'.format(remote_url, err)
-#            if connection_retries <= max_connection_retries:
-#                on_error('failed connection attempt in {}'.format(message))
-#                on_error('    retrying connection shortly...')
-#                time.sleep(wait_seconds_between_retries)
-#                continue
-#
-#            on_error('exception in {}'.format(message))
-#            if exit_on_error:
-#                raise SystemExit(err)  # Allow the exception to bubble up.
-#            else:
-#                remote_response = []
-#                break
-#
-#    return remote_response
-
-
-#
 # Perform Kea error checking and and data validation.
 #
 def get_kea_records(kea_response_json):
@@ -163,23 +114,16 @@ def get_kea_records(kea_response_json):
     # Check Kea return codes. (Kea codes are 0,1,2,3)
     kea_return_code = kea_response_json[0]['result']
     if kea_return_code != 0:
-        #on_error('Kea response contains error in results code:')
-        #on_error('    results code: {}'.format(kea_return_code))
         log.error(f'Kea response contains error in results code:')
         log.error(f'    results code: {kea_return_code}')
         if not kea_return_code:
-            #on_error('    exception in call to Kea')
             log.error(f'    exception in call to Kea')
         if kea_return_code == 3:
-            #on_error('    no leases found in Kea')
             log.error(f'    no leases found in Kea')
 
     # Make sure that Kea is actually returning data!
     if 'arguments' not in kea_response_json[0] or \
             'Dhcp4' not in kea_response_json[0]['arguments']:
-        #on_error('Kea API returned successfully, but with no leases.')
-        #on_error('    return code: {}'.format(kea_return_code))
-        #on_error('    return data: {}'.format(kea_response_json))
         log.error(f'Kea API returned successfully, but with no leases.')
         log.error(f'    return code: {kea_return_code}')
         log.error(f'    return data: {kea_response_json}')
@@ -203,9 +147,9 @@ def main():
     api_errors = False
 
     # setup api urls
-    kea_api = APIRequest('http://cray-dhcp-kea-api:8000')
-    smd_api = APIRequest('http://cray-smd')
-    sls_api = APIRequest('http://cray-sls')
+    kea_api = APIRequest(os.environ['KEA_API_ENDPOINT'])
+    smd_api = APIRequest(os.environ['SMD_API_ENDPOINT'])
+    sls_api = APIRequest(os.environ['SLS_API_ENDPOINT'])
 
     # te = time.perf_counter()
     # print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
@@ -220,16 +164,8 @@ def main():
     #
     print(f'Querying Kea in the cluster to find any updated records we need to set')
     ts = time.perf_counter()
-    kea_url = os.environ['KEA_API_ENDPOINT']
-    # DEBUG
-    # kea_url = 'http://cray-dhcp-kea-api:8000'
     kea_headers = {"Content-Type": "application/json"}
     kea_request = {"command": "config-get", "service": ["dhcp4"]}
-
-    #kea_response_json = remote_request('POST',
-    #                                   kea_url,
-    #                                   headers=kea_headers,
-    #                                   data=kea_request)
 
     resp = kea_api('POST', '/', headers=kea_headers, json=kea_request)
     kea_response_json = resp.json()
@@ -241,17 +177,14 @@ def main():
 
     # Kea leases or generally canonical as to what should exist in DNS
     te = time.perf_counter()
-    #print('Retrieved Kea data ({0:.5}s)'.format(te - ts))
     print(f'Retrieved Kea data {int(te - ts)}s')
 
     # Global lease check - non-fatal in v1.4
     kea_global_leases = []
     if 'reservations' not in kea_records:
-        #on_error('Kea global reservations data is empty')
         log.error(f'Kea global reservations data is empty')
     else:
         kea_global_leases = kea_records['reservations']
-        #print('Found {} leases and reservations in Kea globals'.format(len(kea_global_leases)))
         print(f'Found {len(kea_global_leases)} leases and reservations in Kea globals')
 
     #
@@ -262,11 +195,9 @@ def main():
     kea_local_leases = []
     kea_subnets = []
     if not 'subnet4' in kea_records:
-        #on_error('Kea Dhcp4 lease and reservation data is empty')
         log.error(f'Kea Dhcp4 lease and reservation data is empty')
     else:
         kea_subnets = kea_records['subnet4']
-        #print('Found {} subnets in Kea'.format(len(kea_subnets)))
         print(f'Found {len(kea_subnets)} subnets in Kea')
 
     for subnet in kea_subnets:
@@ -290,7 +221,6 @@ def main():
 
         # Having empty values is an error
         if not lease['hostname'].strip() or not lease['ip-address'].strip():
-            #on_error('Kea returned lease with incomplete data, continuing {}'.format(lease))
             log.error('Kea returned lease with incomplete data, continuing {lease}')
             continue
 
@@ -308,7 +238,6 @@ def main():
             master_dns_records.append(record)
 
     te = time.perf_counter()
-    #print('Gathered {0} total leases and reservations local and global ({1:.5f}s)'.format(len(master_dns_records), te - ts))
     print(f'Gathered {len(master_dns_records)} total leases and reservations local and global {int(te - ts)}s')
 
 
@@ -328,8 +257,6 @@ def main():
     #   }
     # ]
     ts = time.perf_counter()
-    smd_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
-    #smd_records = remote_request('GET', smd_request)
     resp = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces')
     smd_records = resp.json()
 
@@ -337,8 +264,6 @@ def main():
         api_errors = True
 
     te = time.perf_counter()
-    #print('Queried SMD to find any xname records we need to set ({0:.5f}s)'.format(te - ts))
-    #print('Found {} records in SMD'.format(len(smd_records)))
     print(f'Queried SMD to find any xname records we need to set {int(te - ts)}s')
     print(f'Found {len(smd_records)} records in SMD')
 
@@ -376,7 +301,6 @@ def main():
     #
     master_dns_records.extend(new_records)
     te = time.perf_counter()
-    #print('Merged new SMD xnames into DNS data structure ({0:.5f}s)'.format(te - ts))
     print(f'Merged new SMD xnames into DNS data structure {int(te - ts)}s')
 
     #
@@ -401,8 +325,6 @@ def main():
     #   }
     # }
     ts = time.perf_counter()
-    sls_request = 'http://cray-sls/v1/hardware'
-    #sls_records = remote_request('GET', sls_request)
     resp = sls_api('GET','/v1/hardware')
     sls_records = resp.json()
 
@@ -464,8 +386,6 @@ def main():
                         new_records.append(new_record)
 
     te = time.perf_counter()
-    #print('Queried SLS to find Management, Application and HSN nid records ({0:.5f})'.format(te - ts))
-    #print('Found {} SLS Hardware records.'.format(len(sls_records)))
     print(f'Queried SLS to find Management, Application and HSN nid records {int(te - ts)}')
     print(f'Found {len(sls_records)} SLS Hardware records.')
     #
@@ -473,23 +393,19 @@ def main():
     # This is the one place Kea is not SoR.
     #
     master_dns_records.extend(new_records)
-    #print('Merged new SLS Application and Management names into DNS data structure')
     print(f'Merged new SLS Application and Management names into DNS data structure')
 
     #
     # v1.4+:  Retrieve network structures
     #
     ts = time.perf_counter()
-    sls_request = 'http://cray-sls/v1/networks'
-    #sls_networks = remote_request('GET', sls_request, exit_on_error=True)
-    sls_networks = sls_api('GET', '/v1/networks').json()
+    resp = sls_api('GET', '/v1/networks')
+    sls_networks = resp.json()
 
     if len(sls_networks) == 0:
         api_errors = True
 
     te = time.perf_counter()
-    #print('Queried SLS to find Network records ({0:.5f})'.format(te - ts))
-    #print('Found {} SLS Network records.'.format(len(sls_networks)))
     print(f'Queried SLS to find Network records {int(te - ts)}')
     print(f'Found {len(sls_networks)} SLS Network records.')
 
@@ -562,11 +478,8 @@ def main():
 
     te = time.perf_counter()
     master_dns_records.extend(static_records)
-    #print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te - ts))
     print(f'Merged new static and alias SLS entries into DNS data structure {int(te - ts)}')
 
-    #print('Found {} compute node nid definitions in SLS hardware'.format(len(nid_records)))
-    #print('Matched {} compute node nid definitions in SLS network reservations'.format(hsn_matches))
     print(f'Found {len(nid_records)} compute node nid definitions in SLS hardware.')
     print(f'Matched {hsn_matches} compute node nid definitions in SLS network reservations.')
 
@@ -601,8 +514,6 @@ def main():
     #
     # Any diff between master records and configmap will trigger a reload.
     #
-    #print('Number of existing records {}'.format(len(existing_records)))
-    #print('Number of new records (including duplicates) {}'.format(len(master_dns_records)))
     print(f'Number of existing records {len(existing_records)}')
     print(f'Number of new records (including duplicates) {len(master_dns_records)}')
     ts = time.perf_counter()
@@ -616,12 +527,10 @@ def main():
             diffs = True
 
     te = time.perf_counter()
-    #print('Comparing new and existing DNS records ({0:.5f})'.format(te - ts))
     print(f'Comparing new and existing DNS records {int(te - ts)}')
 
     if not api_errors and diffs:
         ts = time.perf_counter()
-        #print('    Differences found.  Writing new DNS records to our configmap.')
         print(f'    Differences found.  Writing new DNS records to our configmap.')
         records_string = json.dumps(master_dns_records).replace('"', '\"')  # String
         records_string = codecs.encode(records_string, encoding='utf-8')  # Bytes object
@@ -630,18 +539,14 @@ def main():
         configmap['binaryData']['records.json.gz'] = records_string
         with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
             yaml.dump(configmap, tmp, default_flow_style=False)
-            #print("  Applying the configmap")
             print(f'  Applying the configmap')
             shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
         te = time.perf_counter()
-        #print('Merged records and reloaded configmap ({0:.5f}s)'.format(te - ts))
         print(f'Merged records and reloaded configmap {int(te - ts)}')
 
     elif api_errors and len(master_dns_records) > len(existing_records):
         ts = time.perf_counter()
-        #print('    Differences found.  Writing new DNS records to our configmap.')
-        #print('    API errors occured but generated more records than previous created.')
         print(f'    Differences found.  Writing new DNS records to our configmap.')
         print(f'    API errors occured but generated more records than previous created.')
         records_string = json.dumps(master_dns_records).replace('"', '\"')  # String
@@ -651,24 +556,18 @@ def main():
         configmap['binaryData']['records.json.gz'] = records_string
         with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
             yaml.dump(configmap, tmp, default_flow_style=False)
-            #print("  Applying the configmap")
             print(f"  Applying the configmap")
             shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
         te = time.perf_counter()
-        #print('Merged records and reloaded configmap ({0:.5f}s)'.format(te - ts))
         print(f'Merged records and reloaded configmap {int(te - ts)}s)')
     elif api_errors and len(master_dns_records) < len(existing_records):
         ts = time.perf_counter()
-        #print('    Differences found.  NOT writing DNS records to configmap.')
-        #print('    API errors and generated record was less than previous list')
         print(f'    Differences found.  NOT writing DNS records to configmap.')
         print(f'    API errors and generated record was less than previous list')
         te = time.perf_counter()
-        #print('NO CHANGES to unbound configmap ({0:.5f}s)'.format(te - ts))
         print(f'NO CHANGES to unbound configmap {int(te - ts)}')
     else:
-        #print('    No differences found.  Skipping DNS update')
         print(f'    No differences found.  Skipping DNS update')
 if __name__ == "__main__":
     main()
