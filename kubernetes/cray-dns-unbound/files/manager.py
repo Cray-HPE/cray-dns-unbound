@@ -334,7 +334,7 @@ def main():
     te = time.perf_counter()
     #print('Queried SMD to find any xname records we need to set ({0:.5f}s)'.format(te - ts))
     #print('Found {} records in SMD'.format(len(smd_records)))
-    print(f'Queried SMD to find any xname records we need to set {int{te - ts}s')
+    print(f'Queried SMD to find any xname records we need to set {int(te - ts)}s')
     print(f'Found {len(smd_records)} records in SMD')
 
     #
