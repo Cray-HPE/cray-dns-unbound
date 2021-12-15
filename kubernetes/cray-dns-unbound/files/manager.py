@@ -517,7 +517,7 @@ if not api_errors and diffs:
 
     te = time.perf_counter()
     print('Merged records and reloaded configmap ({0:.5f}s)'.format(te-ts))
-elif api_errors and lem(master_dns_records) > len(existing_records):
+elif api_errors and len(master_dns_records) > len(existing_records):
     ts = time.perf_counter()
     print('    Differences found.  Writing new DNS records to our configmap.')
     print('    API errors occured but generated more records than previous created.')
