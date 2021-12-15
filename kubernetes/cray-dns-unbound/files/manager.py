@@ -183,8 +183,8 @@ def get_kea_records(kea_response_json):
         #on_error('    return code: {}'.format(kea_return_code))
         #on_error('    return data: {}'.format(kea_response_json))
         log.error(f'Kea API returned successfully, but with no leases.')
-        log.error(f'    return code: {}'.format(kea_return_code))
-        log.error(f'    return data: {}'.format(kea_response_json))
+        log.error(f'    return code: {kea_return_code}')
+        log.error(f'    return data: {kea_response_json}')
         kea_records = {'result': None, 'arguments': {'Dhcp4': []}}
     else:
         kea_records = kea_response_json[0]['arguments']['Dhcp4']
