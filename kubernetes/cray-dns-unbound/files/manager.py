@@ -231,7 +231,8 @@ def main():
     #                                   headers=kea_headers,
     #                                   data=kea_request)
 
-    kea_response_json = kea_api('POST', '/', headers=kea_headers, json=kea_request).json()
+    resp = kea_api('POST', '/', headers=kea_headers, json=kea_request)
+    kea_response_json = resp.json()
     if len(kea_response_json) == 0:
         api_errors = True
 
@@ -329,7 +330,8 @@ def main():
     ts = time.perf_counter()
     smd_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
     #smd_records = remote_request('GET', smd_request)
-    smd_records = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces').json()
+    resp = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces')
+    smd_records = resp.json()
 
     if len(smd_records) == 0:
         api_errors = True
@@ -401,7 +403,8 @@ def main():
     ts = time.perf_counter()
     sls_request = 'http://cray-sls/v1/hardware'
     #sls_records = remote_request('GET', sls_request)
-    sls_records = sls_api('GET','/v1/hardware').json()
+    resp = sls_api('GET','/v1/hardware')
+    sls_records = resp.json()
 
     if len(sls_records) == 0:
         api_errors = True
