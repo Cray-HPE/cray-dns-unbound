@@ -12,6 +12,7 @@ import codecs
 import shared
 import requests
 import subprocess
+from urllib.parse import urljoin
 import logging
 from tempfile import NamedTemporaryFile
 
