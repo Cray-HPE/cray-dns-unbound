@@ -25,11 +25,6 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 log.addHandler(handler)
 
-# setup api urls
-kea_api = APIRequest('http://cray-dhcp-kea-api:8000')
-smd_api = APIRequest('http://cray-smd')
-sls_api = APIRequest('http://cray-sls')
-
 class APIRequest(object):
     """
 
@@ -203,6 +198,11 @@ def main():
     # ts = time.perf_counter()
 
     api_errors = False
+
+    # setup api urls
+    kea_api = APIRequest('http://cray-dhcp-kea-api:8000')
+    smd_api = APIRequest('http://cray-smd')
+    sls_api = APIRequest('http://cray-sls')
 
     # te = time.perf_counter()
     # print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
