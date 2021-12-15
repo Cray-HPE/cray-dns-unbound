@@ -329,7 +329,7 @@ def main():
     ts = time.perf_counter()
     smd_request = 'http://cray-smd/hsm/v1/Inventory/EthernetInterfaces'
     #smd_records = remote_request('GET', smd_request)
-    smd_records = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces').json()
+    smd_records = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces').json()
 
     if len(smd_records) == 0:
         api_errors = True
