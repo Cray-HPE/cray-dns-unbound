@@ -482,8 +482,10 @@ def main():
         api_errors = True
 
     te = time.perf_counter()
-    print('Queried SLS to find Network records ({0:.5f})'.format(te - ts))
-    print('Found {} SLS Network records.'.format(len(sls_networks)))
+    #print('Queried SLS to find Network records ({0:.5f})'.format(te - ts))
+    #print('Found {} SLS Network records.'.format(len(sls_networks)))
+    print(f'Queried SLS to find Network records {int(te - ts)}')
+    print(f'Found {len(sls_networks)} SLS Network records.')
 
     #
     # v1.4+: Get static A record values from network structures
@@ -554,10 +556,13 @@ def main():
 
     te = time.perf_counter()
     master_dns_records.extend(static_records)
-    print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te - ts))
+    #print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te - ts))
+    print(f'Merged new static and alias SLS entries into DNS data structure {int(te - ts)})
 
-    print('Found {} compute node nid definitions in SLS hardware'.format(len(nid_records)))
-    print('Matched {} compute node nid definitions in SLS network reservations'.format(hsn_matches))
+    #print('Found {} compute node nid definitions in SLS hardware'.format(len(nid_records)))
+    #print('Matched {} compute node nid definitions in SLS network reservations'.format(hsn_matches))
+    print(f'Found {len(nid_records)} compute node nid definitions in SLS hardware.')
+    print(f'Matched {hsn_matches} compute node nid definitions in SLS network reservations.')
 
     #
     # Load current running DNS entries
@@ -593,7 +598,7 @@ def main():
     #print('Number of existing records {}'.format(len(existing_records)))
     #print('Number of new records (including duplicates) {}'.format(len(master_dns_records)))
     print(f'Number of existing records {len(existing_records)}')
-    print('Number of new records (including duplicates) {len(master_dns_records)}')
+    print(f'Number of new records (including duplicates) {len(master_dns_records)}')
     ts = time.perf_counter()
 
     diffs = False
