@@ -557,7 +557,7 @@ def main():
     te = time.perf_counter()
     master_dns_records.extend(static_records)
     #print('Merged new static and alias SLS entries into DNS data structure ({0:.5f}s)'.format(te - ts))
-    print(f'Merged new static and alias SLS entries into DNS data structure {int(te - ts)})
+    print(f'Merged new static and alias SLS entries into DNS data structure {int(te - ts)}')
 
     #print('Found {} compute node nid definitions in SLS hardware'.format(len(nid_records)))
     #print('Matched {} compute node nid definitions in SLS network reservations'.format(hsn_matches))
