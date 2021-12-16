@@ -20,7 +20,7 @@ from tempfile import NamedTemporaryFile
 
 # globals
 log = logging.getLogger(__name__)
-log.setLevel(os.environ['LOG_LEVEL'])
+log.setLevel(level = os.environ['LOG_LEVEL'])
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
