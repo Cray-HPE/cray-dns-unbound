@@ -20,7 +20,7 @@ from tempfile import NamedTemporaryFile
 
 # globals
 log = logging.getLogger(__name__)
-log.setLevel(logging.WARN)
+log.setLevel(os.environ['LOG_LEVEL'])
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -151,9 +151,6 @@ def main():
     smd_api = APIRequest(os.environ['SMD_API_ENDPOINT'])
     sls_api = APIRequest(os.environ['SLS_API_ENDPOINT'])
 
-    # te = time.perf_counter()
-    # print('Time taken to run concurrency check ({0:.5}s)'.format(te-ts))
-
     #
     # Master data structure for DNS records which *must* exist
     #
@@ -162,7 +159,7 @@ def main():
     #
     # Query Kea for active server lease information
     #
-    print(f'Querying Kea in the cluster to find any updated records we need to set')
+    log.info(f'Querying Kea in the cluster to find any updated records we need to set')
     ts = time.perf_counter()
     kea_headers = {"Content-Type": "application/json"}
     kea_request = {"command": "config-get", "service": ["dhcp4"]}
@@ -170,6 +167,7 @@ def main():
     resp = kea_api('POST', '/', headers=kea_headers, json=kea_request)
     kea_response_json = resp.json()
     if len(kea_response_json) == 0:
+        log.warning(f'Did not get any data from Kea API call')
         api_errors = True
 
     # Retrieve cleansed records that are pointing to the correct location
@@ -177,7 +175,7 @@ def main():
 
     # Kea leases or generally canonical as to what should exist in DNS
     te = time.perf_counter()
-    print(f'Retrieved Kea data {int(te - ts)}s')
+    log.info(f'Retrieved Kea data {int(te - ts)}s')
 
     # Global lease check - non-fatal in v1.4
     kea_global_leases = []
@@ -185,7 +183,7 @@ def main():
         log.error(f'Kea global reservations data is empty')
     else:
         kea_global_leases = kea_records['reservations']
-        print(f'Found {len(kea_global_leases)} leases and reservations in Kea globals')
+        log.info(f'Found {len(kea_global_leases)} leases and reservations in Kea globals')
 
     #
     # Load per-subnet leases/reservations - can be also be global.
@@ -198,7 +196,7 @@ def main():
         log.error(f'Kea Dhcp4 lease and reservation data is empty')
     else:
         kea_subnets = kea_records['subnet4']
-        print(f'Found {len(kea_subnets)} subnets in Kea')
+        log.info(f'Found {len(kea_subnets)} subnets in Kea')
 
     for subnet in kea_subnets:
         if 'reservations' not in subnet:
@@ -209,7 +207,7 @@ def main():
             kea_local_leases.append(record)
 
     te = time.perf_counter()
-    print(f'Found {len(kea_local_leases)} leases and reservations in Kea local subnets {int(te - ts)}s')
+    log.info(f'Found {len(kea_local_leases)} leases and reservations in Kea local subnets {int(te - ts)}s')
 
     # Merge global and local Kea leases/reservations - with cleanup.
     #
@@ -238,7 +236,7 @@ def main():
             master_dns_records.append(record)
 
     te = time.perf_counter()
-    print(f'Gathered {len(master_dns_records)} total leases and reservations local and global {int(te - ts)}s')
+    log.info(f'Gathered {len(master_dns_records)} total leases and reservations local and global {int(te - ts)}s')
 
 
     #
@@ -261,6 +259,7 @@ def main():
     smd_records = resp.json()
 
     if len(smd_records) == 0:
+        log.warning(f'Did not get any data from SMD EthernetInterfaces API call')
         api_errors = True
 
     te = time.perf_counter()
@@ -301,7 +300,7 @@ def main():
     #
     master_dns_records.extend(new_records)
     te = time.perf_counter()
-    print(f'Merged new SMD xnames into DNS data structure {int(te - ts)}s')
+    log.info(f'Merged new SMD xnames into DNS data structure {int(te - ts)}s')
 
     #
     # CASMNET-130 and CASMNET-137: UANs and Management NCNs need to have
@@ -329,6 +328,7 @@ def main():
     sls_records = resp.json()
 
     if len(sls_records) == 0:
+        log.warning(f'Did not get any data from SLS hardware API call')
         api_errors = True
 
     #
@@ -386,14 +386,14 @@ def main():
                         new_records.append(new_record)
 
     te = time.perf_counter()
-    print(f'Queried SLS to find Management, Application and HSN nid records {int(te - ts)}')
-    print(f'Found {len(sls_records)} SLS Hardware records.')
+    log.info(f'Queried SLS to find Management, Application and HSN nid records {int(te - ts)}')
+    log.info(f'Found {len(sls_records)} SLS Hardware records.')
     #
     # Merge SLS CNAMES with DNS records.
     # This is the one place Kea is not SoR.
     #
     master_dns_records.extend(new_records)
-    print(f'Merged new SLS Application and Management names into DNS data structure')
+    log.info(f'Merged new SLS Application and Management names into DNS data structure')
 
     #
     # v1.4+:  Retrieve network structures
@@ -403,11 +403,12 @@ def main():
     sls_networks = resp.json()
 
     if len(sls_networks) == 0:
+        log.warning(f'Did not get any data from SLS network API call')
         api_errors = True
 
     te = time.perf_counter()
-    print(f'Queried SLS to find Network records {int(te - ts)}')
-    print(f'Found {len(sls_networks)} SLS Network records.')
+    log.info(f'Queried SLS to find Network records {int(te - ts)}')
+    log.info(f'Found {len(sls_networks)} SLS Network records.')
 
     #
     # v1.4+: Get static A record values from network structures
@@ -478,10 +479,10 @@ def main():
 
     te = time.perf_counter()
     master_dns_records.extend(static_records)
-    print(f'Merged new static and alias SLS entries into DNS data structure {int(te - ts)}')
+    log.info(f'Merged new static and alias SLS entries into DNS data structure {int(te - ts)}')
 
-    print(f'Found {len(nid_records)} compute node nid definitions in SLS hardware.')
-    print(f'Matched {hsn_matches} compute node nid definitions in SLS network reservations.')
+    log.info(f'Found {len(nid_records)} compute node nid definitions in SLS hardware.')
+    log.info(f'Matched {hsn_matches} compute node nid definitions in SLS network reservations.')
 
     #
     # Load current running DNS entries
@@ -508,14 +509,13 @@ def main():
     # f = gzip.open('/etc/unbound/records.json.gz')
     # existing_records = json.load(f)
     te = time.perf_counter()
-    #print('Loaded current DNS entries from configmap ({0:.5}s)'.format(te - ts))
-    print(f'Loaded current DNS entries from configmap {int(te - ts)}')
+    log.info(f'Loaded current DNS entries from configmap {int(te - ts)}')
 
     #
     # Any diff between master records and configmap will trigger a reload.
     #
-    print(f'Number of existing records {len(existing_records)}')
-    print(f'Number of new records (including duplicates) {len(master_dns_records)}')
+    log.info(f'Number of existing records {len(existing_records)}')
+    log.info(f'Number of new records (including duplicates) {len(master_dns_records)}')
     ts = time.perf_counter()
 
     diffs = False
@@ -527,11 +527,11 @@ def main():
             diffs = True
 
     te = time.perf_counter()
-    print(f'Comparing new and existing DNS records {int(te - ts)}')
+    log.info(f'Comparing new and existing DNS records {int(te - ts)}')
 
     if not api_errors and diffs:
         ts = time.perf_counter()
-        print(f'    Differences found.  Writing new DNS records to our configmap.')
+        log.info(f'    Differences found.  Writing new DNS records to our configmap.')
         records_string = json.dumps(master_dns_records).replace('"', '\"')  # String
         records_string = codecs.encode(records_string, encoding='utf-8')  # Bytes object
         records_string = gzip.compress(records_string)
@@ -539,16 +539,16 @@ def main():
         configmap['binaryData']['records.json.gz'] = records_string
         with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
             yaml.dump(configmap, tmp, default_flow_style=False)
-            print(f'  Applying the configmap')
+            log.info(f'  Applying the configmap')
             shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
         te = time.perf_counter()
-        print(f'Merged records and reloaded configmap {int(te - ts)}')
+        log.info(f'Merged records and reloaded configmap {int(te - ts)}')
 
     elif api_errors and len(master_dns_records) > len(existing_records):
         ts = time.perf_counter()
-        print(f'    Differences found.  Writing new DNS records to our configmap.')
-        print(f'    API errors occured but generated more records than previous created.')
+        log.info(f'    Differences found.  Writing new DNS records to our configmap.')
+        log.info(f'    API errors occured but generated more records than previous created.')
         records_string = json.dumps(master_dns_records).replace('"', '\"')  # String
         records_string = codecs.encode(records_string, encoding='utf-8')  # Bytes object
         records_string = gzip.compress(records_string)
@@ -556,18 +556,18 @@ def main():
         configmap['binaryData']['records.json.gz'] = records_string
         with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
             yaml.dump(configmap, tmp, default_flow_style=False)
-            print(f"  Applying the configmap")
+            log.info(f"  Applying the configmap")
             shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
         te = time.perf_counter()
-        print(f'Merged records and reloaded configmap {int(te - ts)}s)')
+        log.info(f'Merged records and reloaded configmap {int(te - ts)}s)')
     elif api_errors and len(master_dns_records) < len(existing_records):
         ts = time.perf_counter()
-        print(f'    Differences found.  NOT writing DNS records to configmap.')
-        print(f'    API errors and generated record was less than previous list')
+        log.info(f'    Differences found.  NOT writing DNS records to configmap.')
+        log.info(f'    API errors and generated record was less than previous list')
         te = time.perf_counter()
-        print(f'NO CHANGES to unbound configmap {int(te - ts)}')
+        log.info(f'NO CHANGES to unbound configmap {int(te - ts)}')
     else:
-        print(f'    No differences found.  Skipping DNS update')
+        log.info(f'    No differences found.  Skipping DNS update')
 if __name__ == "__main__":
     main()

@@ -41,6 +41,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KUBERNETES_UNBOUND_DEPLOYMENT_NAME
               value: "{{ template "cray-dns-unbound.fullname" . }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.logLevel }}"
             resources:
               limits:
                 cpu: "8"
