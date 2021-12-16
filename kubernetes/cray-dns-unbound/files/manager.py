@@ -263,8 +263,8 @@ def main():
         api_errors = True
 
     te = time.perf_counter()
-    print(f'Queried SMD to find any xname records we need to set {int(te - ts)}s')
-    print(f'Found {len(smd_records)} records in SMD')
+    log.info(f'Queried SMD to find any xname records we need to set {int(te - ts)}s')
+    log.info(f'Found {len(smd_records)} records in SMD')
 
     #
     # Find CNAME records in SMD
