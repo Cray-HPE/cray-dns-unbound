@@ -7,6 +7,9 @@ hmnLoadBalancerIp: 10.94.100.225
 replicaCount: 3
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
+smdApiEndpoint: http://cray-smd
+slsApiEndpoint: http://cray-sls
+logLevel: INFO
 
 coreDNS:
   forwardToUnbound: true
@@ -14,7 +17,7 @@ coreDNS:
   configMapName: coredns
   deploymentName: coredns
 
-imagesHost: dtr.dev.cray.com
+imagesHost: artifactory.algol60.net
 image:
   repository: cray/cray-dns-unbound
   pullPolicy: IfNotPresent
@@ -31,7 +34,7 @@ dnsInitializeIntervalSeconds: 90
 
 mgrJob:
   schedule:
-    minute: "*/3"
+    minute: "*/2"
     hour: "*"
     day_of_month: "*"
     month: "*"
