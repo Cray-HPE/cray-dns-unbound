@@ -10,6 +10,9 @@ cache: "2"
 threads: "2"
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
+smdApiEndpoint: http://cray-smd
+slsApiEndpoint: http://cray-sls
+logLevel: INFO
 
 # Controls which IP address ranges unbound will allow queries from.
 # If you want to use unbound as an upstream for kube-dns, or allow other pods
@@ -162,6 +165,10 @@ cray-service:
         - name: exporter
           containerPort: 9167
           protocol: TCP
+      lifecycle:
+        preStop:
+          exec:
+            command: [ "/bin/sh","-c","kill `cat /etc/unbound/unbound.pid`; sleep 10" ]
       volumeMounts:
         - name: cray-dns-unbound-data
           mountPath: "/configmap"
@@ -185,8 +192,8 @@ cray-service:
             - "127.0.0.1:5053"
         failureThreshold: 1
         initialDelaySeconds: 30
-        periodSeconds: 5
-        successThreshold: 3
+        periodSeconds: 1
+        successThreshold: 10
         timeoutSeconds: 1
       nodeSelector: {}
       affinity: {}
@@ -202,5 +209,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.0
-  appVersion: 0.7.0
+    version: 0.7.1
+  appVersion: 0.7.1
