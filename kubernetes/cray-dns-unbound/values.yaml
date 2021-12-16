@@ -7,6 +7,9 @@ hmnLoadBalancerIp: 10.94.100.225
 replicaCount: 3
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
+smdApiEndpoint: http://cray-smd
+slsApiEndpoint: http://cray-sls
+logLevel: INFO
 
 coreDNS:
   forwardToUnbound: true
