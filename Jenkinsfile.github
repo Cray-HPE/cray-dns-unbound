@@ -24,13 +24,21 @@ pipeline {
             parallel {
                 stage('Image') {
                     steps {
-                        sh "make image"
+                        script {
+                            sh "printenv"
+                            sh "make image"
+                        }
                     }
                 }
 
                 stage('Chart') {
                     steps {
-                        sh "make chart"
+                        script {
+                            env.IMAGE = "artifactory.algol60.net/csm-docker/${env.IS_STABLE == "true" ? "stable" : "unstable"}/${env.NAME}"
+                            sh "printenv"
+                            sh "docker version"
+                            sh "make chart"
+                        }
                     }
                 }
             }
