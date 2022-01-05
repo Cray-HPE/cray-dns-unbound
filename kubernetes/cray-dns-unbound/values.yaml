@@ -17,7 +17,7 @@ coreDNS:
   configMapName: coredns
   deploymentName: coredns
 
-imagesHost: artifactory.algol60.net
+imagesHost: dtr.dev.cray.com
 image:
   repository: cray/cray-dns-unbound
   pullPolicy: IfNotPresent
