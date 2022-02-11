@@ -69,22 +69,6 @@ data:
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
 
-    {{- if .Values.forwardZones }}
-    {{- range .Values.forwardZones }}
-
-    forward-zone:
-        name: {{ .name }}
-        {{- range .forwardHosts }}
-        forward-host: {{ . }}
-        {{- end }}
-        {{- range .forwardIps }}
-        forward-addr: {{ . }}
-        {{- end }}
-    {{- end }}
-    {{- else }}
-        local-zone: "." static
-    {{- end }}
-
     stub-zone:
         name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
         stub-addr: {{ .Values.powerDNSServerIp }}
@@ -99,6 +83,22 @@ data:
         {{- range .stubIps }}
         stub-addr: {{ . }}
         {{- end }}
+    {{- end }}
+
+    {{- if .Values.forwardZones }}
+    {{- range .Values.forwardZones }}
+
+    forward-zone:
+        name: {{ .name }}
+        {{- range .forwardHosts }}
+        forward-host: {{ . }}
+        {{- end }}
+        {{- range .forwardIps }}
+        forward-addr: {{ . }}
+        {{- end }}
+    {{- end }}
+    {{- else }}
+        local-zone: "." static
     {{- end }}
 
      remote-control:
