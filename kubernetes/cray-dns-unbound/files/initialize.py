@@ -16,12 +16,26 @@ print(date_time.strftime("%Y-%b-%d %H:%M"), '\n')
 # start timer
 ts = time.perf_counter()
 
+# file checks
 config_load_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/config_loaded'
+unbound_conf_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/unbound.conf'
+records_conf_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/records.conf'
 check_config_loaded = os.path.isfile(config_load_file)
+check_unbound_conf_exists = os.path.isfile(unbound_conf_file)
+check_records_conf_exists = os.path.isfile(records_conf_file)
+
+# configmap data setup
 folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
 config_load_id = ''
 reload_configs = False
 unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] +  '/unbound.conf &')
+
+# create empty records.conf and unbound.conf if they are missing
+if not check_records_conf_exists:
+    open(records_conf_file, 'a').close()
+
+if not check_unbound_conf_exists:
+    open(unbound_conf_file, 'a').close()
 
 # make sure unbound pid is running
 try:

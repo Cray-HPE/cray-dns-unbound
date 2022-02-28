@@ -37,6 +37,7 @@ RUN chmod +x /srv/unbound/entrypoint.sh && \
     chmod +x /srv/unbound/coredns.py
 RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
 RUN gzip ${UNBOUND_CONFIG_DIRECTORY}/records.json
+RUN touch ${UNBOUND_CONFIG_DIRECTORY}/records.conf
 
 RUN chown -R unbound /srv/unbound
 RUN chown -R unbound /etc/unbound
