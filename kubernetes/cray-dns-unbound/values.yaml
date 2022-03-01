@@ -168,7 +168,7 @@ cray-service:
       lifecycle:
         preStop:
           exec:
-            command: [ "/bin/sh","-c","kill `cat /etc/unbound/unbound.pid`; sleep 10" ]
+            command: ["/bin/sh", "-c", "kill `cat /etc/unbound/unbound.pid`; sleep 10"]
       volumeMounts:
         - name: cray-dns-unbound-data
           mountPath: "/configmap"
