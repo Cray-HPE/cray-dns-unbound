@@ -32,11 +32,11 @@ unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] +  '/un
 
 # create empty records.conf and unbound.conf if they are missing
 if not check_records_conf_exists:
-    logger.warn('Recreating /etc/unbound/records.conf')
+    print('Recreating /etc/unbound/records.conf')
     open(records_conf_file, 'a').close()
 
 if not check_unbound_conf_exists:
-    logger.warn('Recreating /etc/unbound/unbound.conf')
+    print('Recreating /etc/unbound/unbound.conf')
     open(unbound_conf_file, 'a').close()
 
 # make sure unbound pid is running
