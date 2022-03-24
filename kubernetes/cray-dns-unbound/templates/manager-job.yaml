@@ -57,4 +57,4 @@ spec:
           - configMap:
               defaultMode: 0777
               name: cray-dns-unbound-jobs
-              name: cray-dns-unbound-jobs
+            name: cray-dns-unbound-jobs
