@@ -25,7 +25,8 @@ spec:
           activeDeadlineSeconds: 1200
           containers:
           - name: manager
-            image: {{ include "cray-dns-unbound.image-prefix" .Values }}{{ .Values.image.repository }}:{{ .Values.image.tag | default (include "cray-dns-unbound.app-version" .) }}
+            image: {{ index .Values "cray-service" "containers" "cray-dns-unbound" "image" "repository" }}:{{ default .Chart.AppVersion (index .Values "cray-service" "containers" "cray-dns-unbound" "image" "tag") }}
+            imagePullPolicy: {{ index .Values "cray-service" "containers" "cray-dns-unbound" "image" "pullPolicy" }}
             command: ["/srv/unbound/manager.py"]
             env:
             - name: KEA_API_ENDPOINT
@@ -44,8 +45,16 @@ spec:
               value: "{{ .Values.logLevel }}"
             resources:
               limits:
-                cpu: "4"
-                memory: "4Gi"
+                cpu: "8"
+                memory: "8Gi"
               requests:
                 cpu: "500m"
                 memory: "1Gi"
+            volumeMounts:
+            - mountPath: /srv/unbound
+              name: cray-dns-unbound-jobs
+          volumes:
+          - configMap:
+              defaultMode: 0777
+              name: cray-dns-unbound-jobs
+              name: cray-dns-unbound-jobs
