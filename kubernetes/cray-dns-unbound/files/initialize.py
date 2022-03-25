@@ -28,7 +28,7 @@ check_records_conf_exists = os.path.isfile(records_conf_file)
 folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
 config_load_id = ''
 reload_configs = False
-unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] +  '/unbound.conf &')
+unbound_cmd = ('unbound -c ' + os.environ['UNBOUND_CONFIG_DIRECTORY'] +  '/unbound.conf &')
 
 # create empty records.conf and unbound.conf if they are missing
 if not check_records_conf_exists:
