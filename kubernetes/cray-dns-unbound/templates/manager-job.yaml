@@ -49,3 +49,11 @@ spec:
               requests:
                 cpu: "500m"
                 memory: "1Gi"
+            volumeMounts:
+            - mountPath: /srv/unbound
+              name: cray-dns-unbound-jobs
+          volumes:
+          - configMap:
+              defaultMode: 0777
+              name: cray-dns-unbound-jobs
+            name: cray-dns-unbound-jobs

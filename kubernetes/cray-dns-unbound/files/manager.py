@@ -258,6 +258,9 @@ def main():
     resp = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces')
     smd_records = resp.json()
 
+    resp = smd_api('GET', '/hsm/v1/State/Components/')
+    smd_state_components = resp.json()
+
     if len(smd_records) == 0:
         log.warning(f'Did not get any data from SMD EthernetInterfaces API call')
         api_errors = True
@@ -347,6 +350,25 @@ def main():
                 'Role' not in sls['ExtraProperties'] or \
                 'Aliases' not in sls['ExtraProperties']:
             continue
+
+        # check for UAN artficial NID number
+        # smd_state_components data is tied to discovery data
+        # the data will be dynamic and reason for extra logic for error handling
+        if sls['ExtraProperties']['Role'] == 'Application':
+            xname = sls['Xname']
+            nidname = ''
+            for record in smd_state_components['Components']:
+                if record['ID'] == xname:
+                    if 'NID' in record:
+                        nidname = 'nid' + str(record['NID'])
+            if nidname != '':
+                nid_records.append({'nidname': nidname, 'xname': xname})
+
+        # get NCN nid number
+        if sls['ExtraProperties']['Role'] == 'Management':
+            nidname = 'nid' + str(sls['ExtraProperties']['NID'])
+            xname = sls['Xname']
+            nid_records.append({'nidname': nidname, 'xname': xname})
 
         # Assemble nid name / xname correlation for HSN records later
         # TODO: move this correlation around in Central DNS
