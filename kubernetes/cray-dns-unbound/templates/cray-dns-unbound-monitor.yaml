@@ -1,5 +1,5 @@
 {{- /*
-Copyright 2020 Hewlett Packard Enterprise Development LP
+Copyright 2022 Hewlett Packard Enterprise Development LP
 */ -}}
 kind: ServiceMonitor
 apiVersion: monitoring.coreos.com/v1
