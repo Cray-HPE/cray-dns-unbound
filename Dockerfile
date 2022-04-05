@@ -1,4 +1,4 @@
-FROM rust:1.58 AS builder
+FROM rust:1 AS builder
 
 
 ADD unbound-telemetry/ /unbound-telemetry
@@ -16,14 +16,14 @@ RUN apt-get update && \
 
 # Pinned to alpine:3.13 because alpine:3.14+ requires Docker 20.10.0 or newer,
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
-FROM artifactory.algol60.net/docker.io/library/alpine:3.15
+FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
 
-RUN apk update && apk add --no-cache bash python3 py-pip unbound=1.13.2-r2 && \
+RUN apk update && apk add --no-cache bash python3 py-pip unbound && \
 pip3 install --upgrade pip && pip3 install requests PyYAML
 
 RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
