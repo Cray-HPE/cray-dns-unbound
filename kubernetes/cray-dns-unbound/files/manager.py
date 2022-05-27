@@ -453,7 +453,7 @@ def main():
             if not 'IPReservations' in subnet:
                 continue
 
-            subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN)_.*$', r'\1', network['Name']).lower()
+            subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN|CHN|CMN)_.*$', r'\1', network['Name']).lower()
             reservations = subnet['IPReservations']
             for reservation in reservations:
                 if 'Name' in reservation and reservation['Name'].strip():
@@ -488,16 +488,17 @@ def main():
                         if nid['xname'] == reservation_xname:
                             hsn_matches += 1
 
-                            ipv4 = reservation['IPAddress']
-                            record = {'hostname': nid['nidname'], 'ip-address': ipv4}
-                            static_records.append(record)
+                            if subdomain != 'chn':
+                                ipv4 = reservation['IPAddress']
+                                record = {'hostname': nid['nidname'], 'ip-address': ipv4}
+                                static_records.append(record)
 
-                            port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
-                            record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
-                            static_records.append(record)
+                                port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
+                                record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
+                                static_records.append(record)
 
-                            record = {'hostname': reservation['Name'], 'ip-address': ipv4}
-                            static_records.append(record)
+                                record = {'hostname': reservation['Name'], 'ip-address': ipv4}
+                                static_records.append(record)
 
     te = time.perf_counter()
     master_dns_records.extend(static_records)
