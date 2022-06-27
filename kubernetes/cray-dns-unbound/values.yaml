@@ -121,6 +121,18 @@ cray-service:
   podAnnotations:
     traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
   replicaCount: 3
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io
+                  operator: NotIn
+                  values:
+                    - cray-dns-unbound
+            topologyKey: "kubernetes.io/hostname"
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -209,5 +221,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.7
-  appVersion: 0.7.7
+    version: 0.7.8
+  appVersion: 0.7.8
