@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2014-2020 Hewlett Packard Enterprise Development LP
+# Copyright 2014-2022 Hewlett Packard Enterprise Development LP
 
 import os
 import re
@@ -258,6 +258,9 @@ def main():
     resp = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces')
     smd_records = resp.json()
 
+    resp = smd_api('GET', '/hsm/v1/State/Components/')
+    smd_state_components = resp.json()
+
     if len(smd_records) == 0:
         log.warning(f'Did not get any data from SMD EthernetInterfaces API call')
         api_errors = True
@@ -348,6 +351,25 @@ def main():
                 'Aliases' not in sls['ExtraProperties']:
             continue
 
+        # check for UAN artficial NID number
+        # smd_state_components data is tied to discovery data
+        # the data will be dynamic and reason for extra logic for error handling
+        if sls['ExtraProperties']['Role'] == 'Application':
+            xname = sls['Xname']
+            nidname = ''
+            for record in smd_state_components['Components']:
+                if record['ID'] == xname:
+                    if 'NID' in record:
+                        nidname = 'nid' + str(record['NID'])
+            if nidname != '':
+                nid_records.append({'nidname': nidname, 'xname': xname})
+
+        # get NCN nid number
+        if sls['ExtraProperties']['Role'] == 'Management':
+            nidname = 'nid' + str(sls['ExtraProperties']['NID'])
+            xname = sls['Xname']
+            nid_records.append({'nidname': nidname, 'xname': xname})
+
         # Assemble nid name / xname correlation for HSN records later
         # TODO: move this correlation around in Central DNS
         for dns in master_dns_records:
@@ -431,7 +453,7 @@ def main():
             if not 'IPReservations' in subnet:
                 continue
 
-            subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN)_.*$', r'\1', network['Name']).lower()
+            subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN|CHN|CMN)_.*$', r'\1', network['Name']).lower()
             reservations = subnet['IPReservations']
             for reservation in reservations:
                 if 'Name' in reservation and reservation['Name'].strip():
@@ -466,16 +488,17 @@ def main():
                         if nid['xname'] == reservation_xname:
                             hsn_matches += 1
 
-                            ipv4 = reservation['IPAddress']
-                            record = {'hostname': nid['nidname'], 'ip-address': ipv4}
-                            static_records.append(record)
+                            if subdomain != 'chn':
+                                ipv4 = reservation['IPAddress']
+                                record = {'hostname': nid['nidname'], 'ip-address': ipv4}
+                                static_records.append(record)
 
-                            port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
-                            record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
-                            static_records.append(record)
+                                port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
+                                record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
+                                static_records.append(record)
 
-                            record = {'hostname': reservation['Name'], 'ip-address': ipv4}
-                            static_records.append(record)
+                                record = {'hostname': reservation['Name'], 'ip-address': ipv4}
+                                static_records.append(record)
 
     te = time.perf_counter()
     master_dns_records.extend(static_records)
