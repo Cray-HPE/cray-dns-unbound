@@ -255,10 +255,10 @@ def main():
     #   }
     # ]
     ts = time.perf_counter()
-    resp = smd_api('GET', '/hsm/v1/Inventory/EthernetInterfaces')
+    resp = smd_api('GET', '/hsm/v2/Inventory/EthernetInterfaces')
     smd_records = resp.json()
 
-    resp = smd_api('GET', '/hsm/v1/State/Components/')
+    resp = smd_api('GET', '/hsm/v2/State/Components/')
     smd_state_components = resp.json()
 
     if len(smd_records) == 0:
@@ -278,20 +278,18 @@ def main():
         # Not all records in SMD are desired, only those with matching
         # IP addresses and different hostnames - resulting in CNAMES.
         for smd in smd_records:
-            # Skip records without data
-            if 'IPAddress' not in smd or 'ComponentID' not in smd:
-                continue
-
             # Skip records with blank data
-            if not smd['IPAddress'].strip() or not smd['ComponentID'].strip():
+            if smd['IPAddresses'] == [] or not smd['ComponentID'].strip() or \
+                    smd['IPAddresses'][0]['IPAddress'] == '':
                 continue
 
             # Skip records with same hostname (expected SMD/Kea duplicates)
             if smd['ComponentID'] == dns['hostname']:
                 break
 
-            if smd['IPAddress'] == dns['ip-address']:
-                new_record = {'hostname': smd['ComponentID'], 'ip-address': smd['IPAddress']}
+            if smd['IPAddresses'][0]['IPAddress'] == dns['ip-address']:
+                new_record = {'hostname': smd['ComponentID'], 'ip-address': smd[
+                    'IPAddresses'][0]['IPAddress']}
                 old_record = {'hostname': dns['hostname'], 'ip-address': dns['ip-address']}
                 # print('    New CNAME {}'.format(new_record))
                 # print('     A record {}'.format(old_record))
@@ -388,23 +386,28 @@ def main():
 
             for smd in smd_records:
                 # Skip records with blank entries
-                if not smd['ComponentID'].strip() or not smd['IPAddress'].strip():
+                if not smd['ComponentID'].strip() or smd['IPAddresses'] == [] or \
+                        smd['IPAddresses'][0]['IPAddress'] == '':
                     continue
 
                 # Get the HMN IP address
                 if smd['ComponentID'] == hmn_xname:
                     for alias in sls['ExtraProperties']['Aliases']:
                         mgmt_alias = alias + '-mgmt'
-                        new_record = {'hostname': mgmt_alias, 'ip-address': smd['IPAddress']}
-                        old_record = {'hostname': hmn_xname, 'ip-address': smd['IPAddress']}
+                        new_record = {'hostname': mgmt_alias, 'ip-address': smd[
+                            'IPAddresses'][0]['IPAddress']}
+                        old_record = {'hostname': hmn_xname, 'ip-address': smd[
+                            'IPAddresses'][0]['IPAddress']}
                         new_records.append(new_record)
 
                 # Get the NMN IP address
                 if smd['ComponentID'] == nmn_xname:
                     for alias in sls['ExtraProperties']['Aliases']:
                         nmn_alias = alias + '-nmn'
-                        new_record = {'hostname': nmn_alias, 'ip-address': smd['IPAddress']}
-                        old_record = {'hostname': nmn_xname, 'ip-address': smd['IPAddress']}
+                        new_record = {'hostname': nmn_alias, 'ip-address': smd[
+                            'IPAddresses'][0]['IPAddress']}
+                        old_record = {'hostname': nmn_xname, 'ip-address': smd[
+                            'IPAddresses'][0]['IPAddress']}
                         new_records.append(new_record)
 
     te = time.perf_counter()
