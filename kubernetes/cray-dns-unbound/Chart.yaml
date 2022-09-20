@@ -1,7 +1,7 @@
 # Copyright 2022 Hewlett Packard Enterprise Development LP
 apiVersion: v2
 name: cray-dns-unbound
-version: 0.7.10
+version: 0.7.11
 sources:
   - https://github.com/NLnetLabs/unbound
   - https://gitlab.com/klutchell/unbound
@@ -13,9 +13,9 @@ dependencies:
     repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
 maintainers:
   - name: dle-hpe
-appVersion: 0.7.10
+appVersion: 0.7.11
 annotations:
   artifacthub.io/images: |
     - name: cray-dns-unbound
-      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.7.10
+      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.7.11
   artifacthub.io/license: MIT
