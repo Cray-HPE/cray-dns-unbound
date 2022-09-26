@@ -128,8 +128,8 @@ cray-service:
           podAffinityTerm:
             labelSelector:
               matchExpressions:
-                - key: app.kubernetes.io
-                  operator: NotIn
+                - key: app.kubernetes.io/name
+                  operator: In
                   values:
                     - cray-dns-unbound
             topologyKey: "kubernetes.io/hostname"
@@ -137,7 +137,7 @@ cray-service:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 4
-      maxUnavailable: 0
+      maxUnavailable: 1
   containers:
     cray-dns-unbound:
       name: cray-dns-unbound
@@ -221,5 +221,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.8
-  appVersion: 0.7.8
+    version: 0.7.11
+  appVersion: 0.7.11
