@@ -82,6 +82,7 @@ data:
         forward-addr: {{ . }}
         {{- end }}
     {{- end }}
+    {{- end }}
 
     stub-zone:
         name: {{ required "domain_name is missing from cray-dns-unbound customizations.yaml values" .Values.domain_name }}
