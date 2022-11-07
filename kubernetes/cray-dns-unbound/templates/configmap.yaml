@@ -65,6 +65,7 @@ data:
         local-zone: "local" static
         local-zone: "nmn." static
         local-zone: "hmn." static
+        local-zone: "mtl." static
     {{- range .Values.localZones }}
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
@@ -81,8 +82,6 @@ data:
         forward-addr: {{ . }}
         {{- end }}
     {{- end }}
-    {{- else }}
-        local-zone: "." static
     {{- end }}
 
     stub-zone:
