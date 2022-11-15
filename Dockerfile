@@ -40,7 +40,7 @@ RUN apk add --no-cache                                                        \
 
 # http://concurrencykit.org/
 ADD https://github.com/concurrencykit/ck/archive/refs/tags/${CONCURRENCY_KIT_VERSION}.tar.gz /opt/
-RUN tar -zxf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz -C /opt/ \
+RUN cd /opt && tar -zxf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz -C /opt/ \
  && cd ck-${CONCURRENCY_KIT_VERSION} \
  && ./configure && make install clean && cd .. \
  && rm -rvf ck-${CONCURRENCY_KIT_VERSION} \
@@ -48,7 +48,7 @@ RUN tar -zxf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz -C /opt/ \
 
 # https://www.dns-oarc.net/tools/dnsperf
 ADD https://www.dns-oarc.net/files/dnsperf/dnsperf-${DNSPERF_VERSION}.tar.gz /opt/
-RUN tar -zxf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz -C /opt/ \
+RUN cd /opt && tar -zxf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz -C /opt/ \
  && cd /opt/dnsperf-${DNSPERF_VERSION} \
  && ./configure && make install distclean && cd .. \
  && rm -rvf /opt/dnsperf-${DNSPERF_VERSION} \
