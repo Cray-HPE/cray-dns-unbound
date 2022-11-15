@@ -36,7 +36,7 @@ RUN apk add --no-cache                                                        \
         nghttp2-dev                                                           \
         openssl-dev
 
-WORKDIR /opt
+
 
 # http://concurrencykit.org/
 ADD https://github.com/concurrencykit/ck/archive/refs/tags/${CONCURRENCY_KIT_VERSION}.tar.gz /opt/
