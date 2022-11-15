@@ -18,6 +18,37 @@ RUN apt-get update && \
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
+
+
+ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
+ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
+ENV UNBOUND_PORT=8953
+
+RUN apk update && apk add --no-cache bash python3 py-pip unbound && \
+pip3 install --upgrade pip && pip3 install requests PyYAML
+
+RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+    && chmod +x /usr/bin/kubectl
+
+RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
+    mkdir -p /srv/unbound && \
+    mkdir -p /var/run/unbound
+
+COPY --from=builder /unbound-telemetry/target/x86_64-unknown-linux-musl/release/unbound-telemetry /bin
+COPY unbound.conf ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
+COPY kubernetes/cray-dns-unbound/files/*.* /srv/unbound/
+RUN chmod +x /srv/unbound/entrypoint.sh && \
+    chmod +x /srv/unbound/initialize.py && \
+    chmod +x /srv/unbound/manager.py && \
+    chmod +x /srv/unbound/coredns.py
+RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
+RUN gzip ${UNBOUND_CONFIG_DIRECTORY}/records.json
+RUN touch ${UNBOUND_CONFIG_DIRECTORY}/records.conf
+
+RUN chown -R unbound /srv/unbound
+RUN chown -R unbound /etc/unbound
+RUN chown -R unbound /var/run/unbound
+
 #####
 ### temp tooling
 
@@ -54,35 +85,6 @@ RUN cd /opt && tar -zxf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz -C /opt/ \
  && rm -rvf /opt/dnsperf-${DNSPERF_VERSION} \
  && rm -rvf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz
 ####
-
-ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
-ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
-ENV UNBOUND_PORT=8953
-
-RUN apk update && apk add --no-cache bash python3 py-pip unbound && \
-pip3 install --upgrade pip && pip3 install requests PyYAML
-
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
-    && chmod +x /usr/bin/kubectl
-
-RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
-    mkdir -p /srv/unbound && \
-    mkdir -p /var/run/unbound
-
-COPY --from=builder /unbound-telemetry/target/x86_64-unknown-linux-musl/release/unbound-telemetry /bin
-COPY unbound.conf ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
-COPY kubernetes/cray-dns-unbound/files/*.* /srv/unbound/
-RUN chmod +x /srv/unbound/entrypoint.sh && \
-    chmod +x /srv/unbound/initialize.py && \
-    chmod +x /srv/unbound/manager.py && \
-    chmod +x /srv/unbound/coredns.py
-RUN echo "[]" > ${UNBOUND_CONFIG_DIRECTORY}/records.json
-RUN gzip ${UNBOUND_CONFIG_DIRECTORY}/records.json
-RUN touch ${UNBOUND_CONFIG_DIRECTORY}/records.conf
-
-RUN chown -R unbound /srv/unbound
-RUN chown -R unbound /etc/unbound
-RUN chown -R unbound /var/run/unbound
 
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
