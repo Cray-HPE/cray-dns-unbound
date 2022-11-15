@@ -21,6 +21,21 @@ FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 #####
 ### temp tooling
 
+ENV CONCURRENCY_KIT_VERSION 0.7.0
+ENV DNSPERF_VERSION 2.9.0
+
+RUN apk add --no-cache                                                        \
+        bind                                                                  \
+        bind-dev                                                              \
+        g++                                                                   \
+        json-c-dev                                                            \
+        krb5-dev                                                              \
+        libcap-dev                                                            \
+        libxml2-dev                                                           \
+        make                                                                  \
+        nghttp2-dev                                                           \
+        openssl-dev
+
 WORKDIR /opt
 
 # http://concurrencykit.org/
@@ -37,7 +52,7 @@ RUN tar -zxf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz -C /opt/ \
  && cd /opt/dnsperf-${DNSPERF_VERSION} \
  && ./configure && make install distclean && cd .. \
  && rm -rvf /opt/dnsperf-${DNSPERF_VERSION} \
- && rm -rvf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz \
+ && rm -rvf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz
 ####
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
