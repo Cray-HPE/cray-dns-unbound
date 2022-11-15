@@ -221,5 +221,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.12
-  appVersion: 0.7.12
+    version: 0.7.13
+  appVersion: 0.7.13

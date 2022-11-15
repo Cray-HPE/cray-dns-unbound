@@ -18,6 +18,27 @@ RUN apt-get update && \
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
+#####
+### temp tooling
+
+WORKDIR /opt
+
+# http://concurrencykit.org/
+ADD https://github.com/concurrencykit/ck/archive/refs/tags/${CONCURRENCY_KIT_VERSION}.tar.gz /opt/
+RUN tar -zxf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz -C /opt/ \
+ && cd ck-${CONCURRENCY_KIT_VERSION} \
+ && ./configure && make install clean && cd .. \
+ && rm -rvf ck-${CONCURRENCY_KIT_VERSION} \
+ && rm -rvf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz
+
+# https://www.dns-oarc.net/tools/dnsperf
+ADD https://www.dns-oarc.net/files/dnsperf/dnsperf-${DNSPERF_VERSION}.tar.gz /opt/
+RUN tar -zxf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz -C /opt/ \
+ && cd /opt/dnsperf-${DNSPERF_VERSION} \
+ && ./configure && make install distclean && cd .. \
+ && rm -rvf /opt/dnsperf-${DNSPERF_VERSION} \
+ && rm -rvf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz \
+####
 
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
