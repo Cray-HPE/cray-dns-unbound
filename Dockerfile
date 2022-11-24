@@ -19,13 +19,18 @@ RUN apt-get update && \
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 
-
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
 
-RUN apk update && apk add --no-cache bash python3 py-pip unbound && \
-pip3 install --upgrade pip && pip3 install requests PyYAML
+RUN apk update && apk add --no-cache bash python3 py3-pip unbound  && \
+    pip3 install --upgrade pip && pip3 install requests PyYAML
+
+# separate section to install dnsperf due to the edge repo of python is 3.11.0 breaks pip3 package
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+    apk update && apk add --no-cache ldns libcrypto3 libssl3 musl nghttp2-libs dnsperf
 
 RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
@@ -49,46 +54,9 @@ RUN chown -R unbound /srv/unbound
 RUN chown -R unbound /etc/unbound
 RUN chown -R unbound /var/run/unbound
 
-#####
-### temp tooling
-
-ENV CONCURRENCY_KIT_VERSION 0.7.0
-ENV DNSPERF_VERSION 2.9.0
-
-RUN apk add --no-cache                                                        \
-        bind                                                                  \
-        bind-dev                                                              \
-        g++                                                                   \
-        json-c-dev                                                            \
-        krb5-dev                                                              \
-        libcap-dev                                                            \
-        libxml2-dev                                                           \
-        make                                                                  \
-        nghttp2-dev                                                           \
-        openssl-dev
-
-
-
-# http://concurrencykit.org/
-ADD https://github.com/concurrencykit/ck/archive/refs/tags/${CONCURRENCY_KIT_VERSION}.tar.gz /opt/
-RUN cd /opt && tar -zxf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz -C /opt/ \
- && cd ck-${CONCURRENCY_KIT_VERSION} \
- && ./configure && make install clean && cd .. \
- && rm -rvf ck-${CONCURRENCY_KIT_VERSION} \
- && rm -rvf /opt/${CONCURRENCY_KIT_VERSION}.tar.gz
-
-# https://www.dns-oarc.net/tools/dnsperf
-ADD https://www.dns-oarc.net/files/dnsperf/dnsperf-${DNSPERF_VERSION}.tar.gz /opt/
-RUN cd /opt && tar -zxf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz -C /opt/ \
- && cd /opt/dnsperf-${DNSPERF_VERSION} \
- && ./configure && make install distclean && cd .. \
- && rm -rvf /opt/dnsperf-${DNSPERF_VERSION} \
- && rm -rvf /opt/dnsperf-${DNSPERF_VERSION}.tar.gz
-####
-
 EXPOSE 5053/udp
 EXPOSE 5053/tcp
 EXPOSE 80/udp
 EXPOSE 80/tcp
 USER unbound
-ENTRYPOINT ["/srv/unbound/entrypoint.sh"]
+#ENTRYPOINT ["/srv/unbound/entrypoint.sh"]
