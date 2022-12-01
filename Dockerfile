@@ -1,4 +1,4 @@
-FROM rust:1 AS builder
+FROM rust AS builder
 
 
 ADD unbound-telemetry/ /unbound-telemetry
