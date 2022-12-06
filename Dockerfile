@@ -1,4 +1,4 @@
-FROM rust AS builder
+FROM artifactory.algol60.net/csm-docker/stable/docker.io/rust:1 AS builder
 
 
 ADD unbound-telemetry/ /unbound-telemetry
