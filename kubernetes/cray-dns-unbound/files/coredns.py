@@ -33,7 +33,7 @@ while True:
             raise SystemExit(err)
 
 corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . %s {' % os.environ['NMN_LOAD_BALANCER_IP'], corefile)
-corefile = re.sub(r'(?m)(^\s*)max_concurrent.*$', r'\1max_concurrent %s' % 10000,corefile)
+corefile = re.sub(r'(?m)(^\s*)max_concurrent.*$', r'\1max_concurrent %s' % os.environ['COREDNS_CONCURRENT_CONNECTIONS_FORWARDER'], corefile)
 
 corefile_patch = """
 data:
