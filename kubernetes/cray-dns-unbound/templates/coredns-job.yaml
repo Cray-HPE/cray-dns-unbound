@@ -29,4 +29,6 @@ spec:
           value: "{{ .Values.coreDNS.namespace }}"
         - name: KUBERNETES_COREDNS_DEPLOYMENT_NAME
           value: "{{ .Values.coreDNS.deploymentName }}"
+        - name: COREDNS_CONCURRENT_CONNECTIONS_FORWARDER
+          value: {{ .Values.corednsConcurrentConnectionsToForwarder }}
 {{- end }}

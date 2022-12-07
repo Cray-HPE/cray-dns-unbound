@@ -5,6 +5,8 @@ hmnLoadBalancerIp: 10.94.100.225
 
 powerDNSServerIp: 10.92.100.85
 
+corednsConcurrentConnectionsToForwarder: 10000
+
 # remember to match cache and threads this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu in multiples of 2
 cache: "2"
 threads: "2"
