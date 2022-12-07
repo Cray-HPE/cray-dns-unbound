@@ -30,5 +30,5 @@ spec:
         - name: KUBERNETES_COREDNS_DEPLOYMENT_NAME
           value: "{{ .Values.coreDNS.deploymentName }}"
         - name: COREDNS_CONCURRENT_CONNECTIONS_FWDER
-          value: {{ .Values.corednsConcurrentConnectionsToFwder }}
+          value: "{{ .Values.corednsConcurrentConnectionsToFwder }}"
 {{- end }}
