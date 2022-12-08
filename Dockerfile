@@ -1,4 +1,4 @@
-FROM rust:1 AS builder
+FROM artifactory.algol60.net/csm-docker/stable/docker.io/rust:1 AS builder
 
 
 ADD unbound-telemetry/ /unbound-telemetry
@@ -23,8 +23,14 @@ ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
 
-RUN apk update && apk add --no-cache bash python3 py-pip unbound && \
-pip3 install --upgrade pip && pip3 install requests PyYAML
+RUN apk update && apk add --no-cache bash python3 py3-pip unbound  && \
+    pip3 install --upgrade pip && pip3 install requests PyYAML
+
+# separate section to install dnsperf due to the edge repo of python is 3.11.0 breaks pip3 package
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+    apk update && apk add --no-cache ldns libcrypto3 libssl3 musl nghttp2-libs dnsperf
 
 RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl

@@ -5,6 +5,8 @@ hmnLoadBalancerIp: 10.94.100.225
 
 powerDNSServerIp: 10.92.100.85
 
+corednsConcurrentConnectionsToFwder: 10000
+
 # remember to match cache and threads this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu in multiples of 2
 cache: "2"
 threads: "2"
@@ -221,5 +223,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.12
-  appVersion: 0.7.12
+    version: 0.7.13
+  appVersion: 0.7.13
