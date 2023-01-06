@@ -45,7 +45,6 @@ helm:
 	    --user $(shell id -u):$(shell id -g) \
 	    --mount type=bind,src="$(shell pwd)",dst=/src \
 	    $(if $(wildcard $(HELM_CONFIG_HOME)/.),--mount type=bind$(COMMA)src=$(HELM_CONFIG_HOME)$(COMMA)dst=/tmp/.helm/config) \
-
 	    -w /src \
 	    -e HELM_CACHE_HOME=/src/.helm/cache \
 	    -e HELM_CONFIG_HOME=/tmp/.helm/config \
