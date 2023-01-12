@@ -218,14 +218,18 @@ cray-service:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
         pullPolicy: IfNotPresent
       command:
-        - /usr/bin/unbound_exporter -unbound.host tcp://${UNBOUND_CONTROL_INTERFACE}:${UNBOUND_CONTROL_PORT}
+        - /bin/sh
+        - -c
+        - /usr/bin/unbound_exporter
+        - -unbound.host
+        - tcp://${UNBOUND_CONTROL_INTERFACE}:${UNBOUND_CONTROL_PORT}
       resources:
         requests:
           cpu: "0.25"
-          memory: "256m"
+          memory: "256Mi"
         limits:
           cpu: "0.5"
-          memory: "512m"
+          memory: "512Mi"
       env:
         - name: UNBOUND_CONTROL_INTERFACE
           value: "127.0.0.1"
