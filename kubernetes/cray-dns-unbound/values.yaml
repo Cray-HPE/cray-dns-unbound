@@ -168,16 +168,12 @@ cray-service:
           value: "90"
         - name: UNBOUND_CONTROL_INTERFACE
           value: "127.0.0.1"
-
       ports:
         - name: udp
           containerPort: 5053
           protocol: UDP
         - name: tcp
           containerPort: 5053
-          protocol: TCP
-        - name: exporter
-          containerPort: 9167
           protocol: TCP
       lifecycle:
         preStop:
@@ -212,6 +208,55 @@ cray-service:
       nodeSelector: {}
       affinity: {}
       tolerations: []
+    unbound-exporter:
+      name: unbound-exporter
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+        runAsNonRoot: true
+      image:
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
+        pullPolicy: IfNotPresent
+      command:
+        - /bin/sh
+        - -c
+        - /usr/bin/unbound_exporter
+        - -unbound.host
+        - tcp://${UNBOUND_CONTROL_INTERFACE}:${UNBOUND_CONTROL_PORT}
+      resources:
+        requests:
+          cpu: "0.25"
+          memory: "256Mi"
+        limits:
+          cpu: "0.5"
+          memory: "512Mi"
+      env:
+        - name: UNBOUND_CONTROL_INTERFACE
+          value: "127.0.0.1"
+        - name: UNBOUND_CONTROL_PORT
+          value: "8953"
+      ports:
+        - name: exporter
+          containerPort: 9167
+          protocol: TCP
+      livenessProbe:
+        httpGet:
+          port: 9167
+          path: /metrics
+        initialDelaySeconds: 30
+        timeoutSeconds: 2
+      readinessProbe:
+        httpGet:
+          port: 9167
+          path: /metrics
+        failureThreshold: 1
+        initialDelaySeconds: 30
+        periodSeconds: 1
+        successThreshold: 10
+        timeoutSeconds: 1
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
   volumes:
     - name: cray-dns-unbound-data
       configMap:
@@ -223,5 +268,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.14
-  appVersion: 0.7.14
+    version: 0.7.15
+  appVersion: 0.7.15

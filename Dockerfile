@@ -1,19 +1,3 @@
-FROM artifactory.algol60.net/csm-docker/stable/docker.io/rust:1 AS builder
-
-
-ADD unbound-telemetry/ /unbound-telemetry
-WORKDIR /unbound-telemetry
-# We can't use the `rust:alpine` image directly,
-# because we have proc macros crates in the dependency tree
-# and they can't be compiled directly on musl systems.
-# Cross compiling works, though, so here we are.
-RUN apt-get update && \
-    apt-get install -y musl-tools && \
-    rustup target add x86_64-unknown-linux-musl && \
-    cargo build --release --target=x86_64-unknown-linux-musl --features vendored && \
-    strip ./target/x86_64-unknown-linux-musl/release/unbound-telemetry
-
-
 # Pinned to alpine:3.13 because alpine:3.14+ requires Docker 20.10.0 or newer,
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
@@ -30,7 +14,7 @@ RUN apk update && apk add --no-cache bash python3 py3-pip unbound  && \
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-    apk update && apk add --no-cache ldns libcrypto3 libssl3 musl nghttp2-libs dnsperf
+    apk update && apk add --no-cache ldns libcrypto3 libssl3 musl nghttp2-libs dnsperf prometheus-unbound-exporter
 
 RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.20.11/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
@@ -39,7 +23,6 @@ RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
     mkdir -p /srv/unbound && \
     mkdir -p /var/run/unbound
 
-COPY --from=builder /unbound-telemetry/target/x86_64-unknown-linux-musl/release/unbound-telemetry /bin
 COPY unbound.conf ${UNBOUND_CONFIG_DIRECTORY}/unbound.conf
 COPY kubernetes/cray-dns-unbound/files/*.* /srv/unbound/
 RUN chmod +x /srv/unbound/entrypoint.sh && \
