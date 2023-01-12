@@ -220,9 +220,7 @@ cray-service:
       command:
         - /bin/sh
         - -c
-        - /usr/bin/unbound_exporter
-        - -unbound.host
-        - tcp://${UNBOUND_CONTROL_INTERFACE}:${UNBOUND_CONTROL_PORT}
+        - /srv/unbound/exporter_entrypoint.sh
       resources:
         requests:
           cpu: "0.25"
