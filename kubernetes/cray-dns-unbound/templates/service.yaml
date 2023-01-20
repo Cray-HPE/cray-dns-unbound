@@ -86,3 +86,96 @@ spec:
   selector:
     app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cray-dns-unbound.name" . }}-tcp-nmn-local-1
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
+    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_1 }}
+  externalTrafficPolicy: Local
+  ports:
+    - name: unbound-server-tcp-nmn-local-1
+      port: 53
+      protocol: TCP
+      targetPort: {{ .Values.serverPort }}
+  selector:
+    app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cray-dns-unbound.name" . }}-udp-nmn-local-1
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
+    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_1 }}
+  externalTrafficPolicy: Local
+  ports:
+    - name: {{ include "cray-dns-unbound.name" . }}-udp-nmn-local-1
+      port: 53
+      protocol: UDP
+      targetPort: {{ .Values.serverPort }}
+  selector:
+    app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cray-dns-unbound.name" . }}-tcp-nmn-local-2
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
+    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_2 }}
+  externalTrafficPolicy: Local
+  ports:
+    - name: unbound-server-tcp-nmn-local-2
+      port: 53
+      protocol: TCP
+      targetPort: {{ .Values.serverPort }}
+  selector:
+    app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cray-dns-unbound.name" . }}-udp-nmn-local-2
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    metallb.universe.tf/address-pool: node-management
+    metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
+    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_2 }}
+  externalTrafficPolicy: Local
+  ports:
+    - name: {{ include "cray-dns-unbound.name" . }}-udp-nmn-local-2
+      port: 53
+      protocol: UDP
+      targetPort: {{ .Values.serverPort }}
+  selector:
+    app.kubernetes.io/name: {{ include "cray-dns-unbound.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---

@@ -1,7 +1,10 @@
 domain_name: example  # removed before packaging
 
-nmnLoadBalancerIp: 10.92.100.225
+# if changing LoadBalancer IPs, update cray-dhcp-kea
 hmnLoadBalancerIp: 10.94.100.225
+nmnLoadBalancerIp: 10.92.100.225
+nmnLoadBalancerIpLocal_1: 10.92.100.224
+nmnLoadBalancerIpLocal_2: 10.92.100.223
 
 powerDNSServerIp: 10.92.100.85
 
@@ -268,5 +271,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.15
-  appVersion: 0.7.15
+    version: 0.7.16
+  appVersion: 0.7.16
