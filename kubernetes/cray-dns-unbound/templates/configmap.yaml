@@ -33,6 +33,8 @@ data:
         cache-min-ttl: 180
         # Maximum lifetime of cached entries
         cache-max-ttl: 3600
+        # Maximum lifetime of negative responses
+        cache-max-negative-ttl: 5
         prefetch: yes
         prefetch-key: yes
         # Optimisations
