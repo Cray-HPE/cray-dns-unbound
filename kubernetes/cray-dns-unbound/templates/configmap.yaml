@@ -50,6 +50,8 @@ data:
         so-rcvbuf: 5m
         # Set this to no for compatibility with PBSPro which requires deterministic ordering of rrsets.
         rrset-roundrobin: no
+        # Continue to health check down DNS servers so they aren't offline longer than necessary
+        infra-keep-probing: yes
 
         local-data: "health.check.unbound A 127.0.0.1"
         local-data-ptr: "127.0.0.1 health.check.unbound"

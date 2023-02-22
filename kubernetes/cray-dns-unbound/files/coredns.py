@@ -32,7 +32,11 @@ while True:
             print(message)
             raise SystemExit(err)
 
-corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . %s {' % os.environ['NMN_LOAD_BALANCER_IP'], corefile)
+if not re.search(r'max_fails 0', corefile):
+    corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . %s {\n       max_fails 0' % os.environ.get('NMN_LOAD_BALANCER_IP','10.92.100.225'), corefile)
+else:
+    corefile = re.sub(r'(?m)(^\s*)forward.*$', r'\1forward . %s {' % os.environ.get('NMN_LOAD_BALANCER_IP','10.92.100.225'), corefile)
+
 corefile = re.sub(r'(?m)(^\s*)max_concurrent.*$', r'\1max_concurrent %s' % os.environ['COREDNS_CONCURRENT_CONNECTIONS_FWDER'], corefile)
 
 corefile_patch = """
