@@ -85,6 +85,7 @@ data:
         {{- range .forwardIps }}
         forward-addr: {{ . }}
         {{- end }}
+        forward-first: yes
     {{- end }}
     {{- end }}
 
