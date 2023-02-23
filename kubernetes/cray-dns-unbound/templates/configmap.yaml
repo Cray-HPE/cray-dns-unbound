@@ -52,6 +52,7 @@ data:
         rrset-roundrobin: no
         # Continue to health check down DNS servers so they aren't offline longer than necessary
         infra-keep-probing: yes
+        infra-host-ttl: 30
 
         local-data: "health.check.unbound A 127.0.0.1"
         local-data-ptr: "127.0.0.1 health.check.unbound"
