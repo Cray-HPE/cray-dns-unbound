@@ -402,13 +402,17 @@ def main():
 
                 # Get the NMN IP address
                 if smd['ComponentID'] == nmn_xname:
+                    # create records for all aliases for node in NMN
                     for alias in sls['ExtraProperties']['Aliases']:
+                        # get alias and create record
+                        record = {'hostname': alias, 'ip-address': smd[
+                            'IPAddresses'][0]['IPAddress']}
+                        new_records.append(record)
+                        # add -nmn to alias and create record
                         nmn_alias = alias + '-nmn'
-                        new_record = {'hostname': nmn_alias, 'ip-address': smd[
+                        nmn_alias_record = {'hostname': nmn_alias, 'ip-address': smd[
                             'IPAddresses'][0]['IPAddress']}
-                        old_record = {'hostname': nmn_xname, 'ip-address': smd[
-                            'IPAddresses'][0]['IPAddress']}
-                        new_records.append(new_record)
+                        new_records.append(nmn_alias_record)
 
     te = time.perf_counter()
     log.info(f'Queried SLS to find Management, Application and HSN nid records {int(te - ts)}')
