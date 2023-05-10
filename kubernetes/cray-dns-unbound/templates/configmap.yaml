@@ -9,7 +9,13 @@ metadata:
 # binaryData:
 #   records.json.gz: H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA
 binaryData:
+  {{- $configmap := (lookup "v1" "ConfigMap" .Release.Namespace "cray-dns-unbound") }}
+  {{- if $configmap }}
+  {{- $records := get $configmap.binaryData "records.json.gz" }}
+  records.json.gz: {{ $records }}
+  {{- else }}
   records.json.gz: {{ .Values.host_records_gzip }}
+  {{- end }}
 data:
   unbound.conf: |-
     server:

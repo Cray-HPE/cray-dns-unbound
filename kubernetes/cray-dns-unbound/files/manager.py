@@ -72,7 +72,7 @@ class APIRequest(object):
             total=10,
             backoff_factor=0.1,
             status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["PATCH", "DELETE", "POST","HEAD", "GET", "OPTIONS"]
+            allowed_methods=["PATCH", "DELETE", "POST","HEAD", "GET", "OPTIONS"]
         )
 
         adapter = HTTPAdapter(max_retries=retry_strategy)
