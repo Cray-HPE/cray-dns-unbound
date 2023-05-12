@@ -497,8 +497,9 @@ def main():
 
                             if subdomain != 'chn':
                                 ipv4 = reservation['IPAddress']
-                                record = {'hostname': nid['nidname'], 'ip-address': ipv4}
-                                static_records.append(record)
+                                if 'h0' in reservation['Name']:
+                                    record = {'hostname': nid['nidname'], 'ip-address': ipv4}
+                                    static_records.append(record)
 
                                 port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
                                 record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
