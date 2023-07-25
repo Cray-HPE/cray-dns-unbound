@@ -78,6 +78,9 @@ data:
         local-zone: "hmn." static
         local-zone: "mtl." static
         local-zone: "hsn." static
+        local-zone: "can." static
+        local-zone: "cmn." static
+        local-zone: "chn." static
     {{- range .Values.localZones }}
         local-zone: "{{ .name }}" {{ .localType }}
     {{- end }}
