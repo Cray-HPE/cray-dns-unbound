@@ -169,6 +169,8 @@ def main():
         if str(nic_index).isnumeric():
             nic_index = 'h' + str(nic_index)
             log.info(f'Using interface ' + nic_index + f' to build the nid alias')
+        elif nic_index == 'all':
+            log.info(f'Using all interfaces to build the nid alias')
         else:
             log.error(f'HSN_NIC_ALIAS is not numeric or all, defaulting to all nics for alias')
             nic_index = 'all'
