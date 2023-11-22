@@ -168,8 +168,9 @@ def main():
         nic_index = os.environ['HSN_NIC_ALIAS']
         if str(nic_index).isnumeric():
             nic_index = 'h' + str(nic_index)
+            log.info(f'Using interface ' + nic_index + f' to build the nid alias')
         else:
-            log.error(f'HSN nic index is not numeric, defaulting to all nics for alias')
+            log.error(f'HSN_NIC_ALIAS is not numeric or all, defaulting to all nics for alias')
             nic_index = 'all'
     except KeyError:
         log.error(f'HSN_NIC_ALIAS environment variable not set, defaulting to all nics for alias')
