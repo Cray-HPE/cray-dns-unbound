@@ -29,6 +29,8 @@ spec:
             imagePullPolicy: {{ index .Values "cray-service" "containers" "cray-dns-unbound" "image" "pullPolicy" }}
             command: ["/srv/unbound/manager.py"]
             env:
+            - name: HSN_NIC_ALIAS
+              value: "{{ .Values.hsnNicAlias }}"
             - name: KEA_API_ENDPOINT
               value: "{{ .Values.keaApiEndpoint }}"
             - name: SMD_API_ENDPOINT

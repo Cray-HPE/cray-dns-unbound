@@ -19,6 +19,10 @@ smdApiEndpoint: http://cray-smd
 slsApiEndpoint: http://cray-sls
 logLevel: INFO
 
+# Control which HSN NIC is used for the primary nid alias.
+# Setting this to all will cause all HSN IPs to be used.
+hsnNicAlias: 0
+
 # Controls which IP address ranges unbound will allow queries from.
 # If you want to use unbound as an upstream for kube-dns, or allow other pods
 # to query the resolver directly, you'll at least need to allow the
@@ -271,5 +275,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.23
-  appVersion: 0.7.23
+    version: 0.7.24
+  appVersion: 0.7.24

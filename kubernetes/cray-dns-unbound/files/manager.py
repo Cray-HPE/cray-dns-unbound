@@ -151,6 +151,33 @@ def main():
     smd_api = APIRequest(os.environ['SMD_API_ENDPOINT'])
     sls_api = APIRequest(os.environ['SLS_API_ENDPOINT'])
 
+    # Setup HSN NIC used for nid alias
+    #
+    # Previous CSM versions associate all HSN NIC IPs with the nid alias
+    #
+    # ncn-m001:~ # host nid001046
+    # nid001046 has address 10.150.0.45
+    # nid001046 has address 10.150.0.126
+    # nid001046 has address 10.150.0.142
+    # nid001046 has address 10.150.0.141
+    #
+    # Some WLMs don't handle this well so only associate the alias with a
+    # single NIC unless the HSN_NIC_ALIAS environment variable isn't set or
+    # is set incorrectly in which case default to the old behaviour.
+    try:
+        nic_index = os.environ['HSN_NIC_ALIAS']
+        if str(nic_index).isnumeric():
+            nic_index = 'h' + str(nic_index)
+            log.info(f'Using interface ' + nic_index + f' to build the nid alias')
+        elif nic_index == 'all':
+            log.info(f'Using all interfaces to build the nid alias')
+        else:
+            log.error(f'HSN_NIC_ALIAS is not numeric or all, defaulting to all nics for alias')
+            nic_index = 'all'
+    except KeyError:
+        log.error(f'HSN_NIC_ALIAS environment variable not set, defaulting to all nics for alias')
+        nic_index = 'all'
+
     #
     # Master data structure for DNS records which *must* exist
     #
@@ -496,9 +523,12 @@ def main():
                             hsn_matches += 1
 
                             if subdomain != 'chn':
+
                                 ipv4 = reservation['IPAddress']
-                                record = {'hostname': nid['nidname'], 'ip-address': ipv4}
-                                static_records.append(record)
+
+                                if nic_index in reservation['Name'] or nic_index == 'all':
+                                    record = {'hostname': nid['nidname'], 'ip-address': ipv4}
+                                    static_records.append(record)
 
                                 port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
                                 record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
