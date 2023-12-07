@@ -9,6 +9,7 @@ import signal
 import subprocess
 import time
 import datetime
+import sys
 
 date_time = datetime.datetime.now()
 print(date_time.strftime("%Y-%b-%d %H:%M"), '\n')
@@ -66,8 +67,15 @@ else:
 
 if reload_configs:
     print('Copying data from mounted folder to Unbound config folder.')
-    shutil.copyfile('/configmap/records.json.gz', '/etc/unbound/records.json.gz')
-    shutil.copyfile('/configmap/unbound.conf', '/etc/unbound/unbound.conf')
+    # If unable to read records.json.gz or unbound.conf from the configmap fail gracefully so Unbound
+    # continues running with the existing config instead of going into CrashLoopBackOff because this
+    # copy fails.
+    try:
+        shutil.copyfile('/configmap/records.json.gz', '/etc/unbound/records.json.gz')
+        shutil.copyfile('/configmap/unbound.conf', '/etc/unbound/unbound.conf')
+    except FileNotFoundError:
+        print('Unable to load config and records from ConfigMap. Leaving existing configuration in place')
+        sys.exit(0)
 
     print('Processing data.')
     records_conf = []
