@@ -608,8 +608,12 @@ def main():
         configmap['binaryData']['records.json.gz'] = records_string
         with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
             yaml.dump(configmap, tmp, default_flow_style=False)
-            log.info(f'  Applying the configmap')
-            shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
+            try:
+                log.info(f'  Applying the configmap')
+                shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
+            except SystemExit:
+                log.error(f'  Failed to apply the configmap, retrying.')
+                shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
         te = time.perf_counter()
         log.info(f'Merged records and reloaded configmap {int(te - ts)}')
@@ -625,8 +629,12 @@ def main():
         configmap['binaryData']['records.json.gz'] = records_string
         with NamedTemporaryFile(mode='w', encoding='utf-8', suffix=".yaml") as tmp:
             yaml.dump(configmap, tmp, default_flow_style=False)
-            log.info(f"  Applying the configmap")
-            shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
+            try:
+                log.info(f'  Applying the configmap')
+                shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
+            except SystemExit:
+                log.error(f'  Failed to apply the configmap, retrying.')
+                shared.run_command(['kubectl', 'replace', '--force', '-f', tmp.name])
 
         te = time.perf_counter()
         log.info(f'Merged records and reloaded configmap {int(te - ts)}s)')
