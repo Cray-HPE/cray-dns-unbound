@@ -558,7 +558,16 @@ def main():
         configmap['metadata'].pop('annotations', None)
 
         # Read in base64 encoded and gzip'd records
-        configmap_records = configmap['binaryData']['records.json.gz']  # String
+        try:
+            configmap_records = configmap['binaryData']['records.json.gz']  # String
+        except KeyError as key:
+            # If the binaryData."records.json.gz" key is missing from the ConfigMap then set it to the
+            # base64 encoded, gzipped representation of [] to ensure there is a blank set of records to
+            # use for comparison forcing manager.py to add all the records it generated to the configmap.
+            log.error(f'Key {key} missing from ConfigMap. Setting to [] to force rebuild of records.')
+            configmap['binaryData'] = {"records.json.gz": "H4sICLQ/Z2AAA3JlY29yZHMuanNvbgCLjuUCAETSaHADAAAA"}
+            configmap_records = configmap['binaryData']['records.json.gz']  # String
+
         configmap_records = codecs.encode(configmap_records, encoding='utf-8')  # Bytes object
         configmap_records = codecs.decode(configmap_records, encoding='base64')
         configmap_records = gzip.decompress(configmap_records)
