@@ -7,8 +7,7 @@ ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
 
-RUN apk update && apk add --no-cache bash python3 py3-pip unbound  && \
-    pip3 install --upgrade pip && pip3 install requests PyYAML
+RUN apk update && apk add --no-cache bash python3 py3-requests py3-yaml unbound
 
 # separate section to install dnsperf due to the edge repo of python is 3.11.0 breaks pip3 package
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
