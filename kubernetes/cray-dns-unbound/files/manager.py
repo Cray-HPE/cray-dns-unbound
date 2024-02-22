@@ -548,6 +548,7 @@ def main():
     # Load current running DNS entries
     #
     ts = time.perf_counter()
+    log.info(f'Running kubectl to retrieve existing records and configuration.')
     output = shared.run_command(['kubectl', 'get', 'configmap',
                                  os.environ['KUBERNETES_UNBOUND_CONFIGMAP_NAME'],
                                  '-n', os.environ['KUBERNETES_NAMESPACE'],

@@ -4,9 +4,11 @@
 import subprocess
 
 def run_command(cmd):
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output = p.stdout.decode('utf-8')
-    print(output)
+    err = p.stderr.decode('utf-8')
+    print("Stdout:\n" + output)
+    print("Stderr:\n" + err)
     if p.returncode != 0:
         raise SystemExit('Error running command')
     return output
