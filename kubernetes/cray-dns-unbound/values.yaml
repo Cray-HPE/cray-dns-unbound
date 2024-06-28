@@ -151,8 +151,8 @@ cray-service:
     cray-dns-unbound:
       name: cray-dns-unbound
       securityContext:
-        runAsUser: 101
-        runAsGroup: 102
+        runAsUser: 1001
+        runAsGroup: 1001
         runAsNonRoot: true
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
@@ -218,8 +218,8 @@ cray-service:
     unbound-exporter:
       name: unbound-exporter
       securityContext:
-        runAsUser: 100
-        runAsGroup: 101
+        runAsUser: 1002
+        runAsGroup: 1002
         runAsNonRoot: true
       image:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
@@ -275,5 +275,5 @@ cray-service:
 global:
   chart:
     name: cray-dns-unbound
-    version: 0.7.27
-  appVersion: 0.7.27
+    version: 0.7.28
+  appVersion: 0.7.28
