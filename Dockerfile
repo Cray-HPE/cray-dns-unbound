@@ -2,10 +2,14 @@
 # see https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0
 FROM artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
-
 ENV UNBOUND_CONFIG_DIRECTORY=/etc/unbound
 ENV UNBOUND_CONTROL_INTERFACE=127.0.0.1
 ENV UNBOUND_PORT=8953
+
+RUN addgroup -g 1001 -S unbound
+RUN adduser -G unbound -g 'Unbound User' -h /etc/unbound -u 1001 -S unbound
+RUN addgroup -g 1002 -S prometheus
+RUN adduser -G prometheus -g 'prometheus' -h /var/lib/prometheus -u 1002 -S prometheus
 
 RUN apk update && apk add --no-cache bash python3 py3-requests py3-yaml unbound
 
