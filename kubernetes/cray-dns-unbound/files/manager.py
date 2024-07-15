@@ -487,7 +487,7 @@ def main():
             if not 'IPReservations' in subnet:
                 continue
 
-            subdomain = re.sub('^(NMN|HMN|HSN|MTL|CAN|CHN|CMN)_.*$', r'\1', network['Name']).lower()
+            subdomain = re.sub(r'^(NMN|HMN|HSN|MTL|CAN|CHN|CMN)_.*$', r'\1', network['Name']).lower()
             reservations = subnet['IPReservations']
             for reservation in reservations:
                 if 'Name' in reservation and reservation['Name'].strip():
@@ -516,8 +516,8 @@ def main():
                 # Three records per: nid002023 x1003c7s7b1n1h0 nid002023-hsn0
                 # Operate only on xnames
                 if reservation['Name'][0] == 'x':
-                    reservation_xname = re.sub('h\d+$', '', reservation['Name'])  # remove port
-                    reservation_xname = re.sub('([a-z])0+([0-9]+[a-z])', r'\1\2', reservation_xname)  # zero padding
+                    reservation_xname = re.sub(r'h\d+$', '', reservation['Name'])  # remove port
+                    reservation_xname = re.sub(r'([a-z])0+([0-9]+[a-z])', r'\1\2', reservation_xname)  # zero padding
                     for nid in nid_records:
                         if nid['xname'] == reservation_xname:
                             hsn_matches += 1
@@ -530,7 +530,7 @@ def main():
                                     record = {'hostname': nid['nidname'], 'ip-address': ipv4}
                                     static_records.append(record)
 
-                                port = re.sub('^(.*)h(\d+)$', r'\2', reservation['Name'])
+                                port = re.sub(r'^(.*)h(\d+)$', r'\2', reservation['Name'])
                                 record = {'hostname': nid['nidname'] + '-hsn' + port, 'ip-address': ipv4}
                                 static_records.append(record)
 

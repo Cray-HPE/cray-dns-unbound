@@ -21,9 +21,11 @@ ts = time.perf_counter()
 config_load_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/config_loaded'
 unbound_conf_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/unbound.conf'
 records_conf_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/records.conf'
+custom_records_conf_file = os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/custom_records.conf'
 check_config_loaded = os.path.isfile(config_load_file)
 check_unbound_conf_exists = os.path.isfile(unbound_conf_file)
 check_records_conf_exists = os.path.isfile(records_conf_file)
+check_custom_records_conf_exists = os.path.isfile(custom_records_conf_file)
 
 # configmap data setup
 folder_contents = sorted(os.listdir(os.environ['UNBOUND_CONFIGMAP_DIRECTORY']))
@@ -39,6 +41,10 @@ if not check_records_conf_exists:
 if not check_unbound_conf_exists:
     print('Recreating /etc/unbound/unbound.conf')
     open(unbound_conf_file, 'a').close()
+
+if not check_custom_records_conf_exists:
+    print('Recreating /etc/unbound/unbound.conf')
+    open(custom_records_conf_file, 'a').close()
 
 # make sure unbound pid is running
 try:
@@ -71,8 +77,9 @@ if reload_configs:
     # continues running with the existing config instead of going into CrashLoopBackOff because this
     # copy fails.
     try:
-        shutil.copyfile('/configmap/records.json.gz', '/etc/unbound/records.json.gz')
-        shutil.copyfile('/configmap/unbound.conf', '/etc/unbound/unbound.conf')
+        shutil.copyfile(os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] + '/records.json.gz', os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/records.json.gz')
+        shutil.copyfile(os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] + '/unbound.conf', os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/unbound.conf')
+        shutil.copyfile(os.environ['UNBOUND_CONFIGMAP_DIRECTORY'] + '/custom_records.conf', os.environ['UNBOUND_CONFIG_DIRECTORY'] + '/custom_records.conf')
     except FileNotFoundError:
         print('Unable to load config and records from ConfigMap. Leaving existing configuration in place')
         sys.exit(0)
