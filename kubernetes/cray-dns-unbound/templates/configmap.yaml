@@ -19,6 +19,7 @@ binaryData:
 data:
   {{- if $configmap }}
   {{- $records := get $configmap.data "custom_records.conf" }}
+  {{- if $records }}
   custom_records.conf: |-
   {{- $records | nindent 4 }}
   {{- else }}
@@ -31,6 +32,7 @@ data:
     # local-data: "axfr-service.example.com A 10.252.4.254"
     # local-data-ptr: "10.252.4.254 axfr-service.example.com"
     # local-data: "_axfr-service._tcp.example.com 3600 IN SRV 0 100 8080 axfr-service.example.com."
+  {{- end }}
   {{- end }}
   unbound.conf: |-
     server:
