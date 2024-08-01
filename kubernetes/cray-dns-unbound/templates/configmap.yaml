@@ -29,9 +29,9 @@ data:
     # WARNING: Syntax errors here will cause Unbound to fail to start and the cluster DNS service will fail.
     #
     # Examples:
-    # local-data: "axfr-service.example.com A 10.252.4.254"
+    # local-data: "axfr-service.example.com. A 10.252.4.254"
     # local-data-ptr: "10.252.4.254 axfr-service.example.com"
-    # local-data: "_axfr-service._tcp.example.com 3600 IN SRV 0 100 8080 axfr-service.example.com."
+    # local-data: "_axfr-service._tcp.example.com. 3600 IN SRV 0 100 8080 axfr-service.example.com."
   {{- end }}
   {{- end }}
   unbound.conf: |-
