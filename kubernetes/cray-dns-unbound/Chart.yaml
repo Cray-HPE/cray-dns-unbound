@@ -1,7 +1,7 @@
 # Copyright 2022 Hewlett Packard Enterprise Development LP
 apiVersion: v2
 name: cray-dns-unbound
-version: 0.8.2
+version: 0.8.3
 
 sources:
   - https://github.com/NLnetLabs/unbound
@@ -10,13 +10,13 @@ description: Kubernetes resources for Cray DNS resolver using Unbound
 home: https://github.com/Cray-HPE/cray-dns-unbound
 dependencies:
   - name: cray-service
-    version: "~10.0"
+    version: "~11.0.0"
     repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
 maintainers:
-  - name: dle-hpe
-appVersion: 0.8.2
+  - name: spillerc-hpe
+appVersion: 0.8.3
 annotations:
   artifacthub.io/images: |
     - name: cray-dns-unbound
-      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.8.2
+      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.8.3
   artifacthub.io/license: MIT
