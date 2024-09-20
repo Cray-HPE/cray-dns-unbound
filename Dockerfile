@@ -11,7 +11,7 @@ RUN adduser -G unbound -g 'Unbound User' -h /etc/unbound -u 1001 -S unbound
 RUN addgroup -g 1002 -S prometheus
 RUN adduser -G prometheus -g 'prometheus' -h /var/lib/prometheus -u 1002 -S prometheus
 
-RUN apk update && apk add --no-cache bash python3 py3-requests py3-yaml unbound
+RUN apk update && apk add --no-cache bash python3 py3-requests py3-yaml unbound dnsdist
 
 # separate section to install dnsperf due to the edge repo of python is 3.11.0 breaks pip3 package
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
