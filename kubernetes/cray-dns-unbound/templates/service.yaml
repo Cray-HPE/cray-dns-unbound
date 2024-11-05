@@ -8,7 +8,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: hardware-management
     metallb.universe.tf/allow-shared-ip: {{ template "cray-dns-unbound.fullname" . }}-hmn
-    external-dns.alpha.kubernetes.io/hostname: {{ template "cray-dns-unbound.fullname" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
@@ -30,7 +29,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: node-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
@@ -52,7 +50,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: hardware-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-hmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.hmnLoadBalancerIp }}
@@ -74,7 +71,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: node-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIp }}
@@ -96,7 +92,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: node-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_1 }}
@@ -119,7 +114,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: node-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_1 }}
@@ -142,7 +136,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: node-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_2 }}
@@ -165,7 +158,6 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: node-management
     metallb.universe.tf/allow-shared-ip: {{ include "cray-dns-unbound.name" . }}-nmn
-    external-dns.alpha.kubernetes.io/hostname: {{ include "cray-dns-unbound.name" . }}
 spec:
   type: LoadBalancer
   loadBalancerIP: {{ .Values.nmnLoadBalancerIpLocal_2 }}
