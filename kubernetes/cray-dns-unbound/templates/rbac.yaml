@@ -45,11 +45,6 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["{{ .Values.coreDNS.configMapName }}"]
   verbs: ["get", "patch"]
-- apiGroups: ['policy']
-  resources: ['podsecuritypolicies']
-  verbs:     ['use']
-  resourceNames:
-  - restricted-transition-net-raw
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -66,20 +61,4 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: {{ template "cray-dns-unbound.fullname" . }}-coredns-role
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: {{ template "cray-dns-unbound.fullname" . }}-psp
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: restricted-transition-net-raw-psp
-subjects:
-  - kind: ServiceAccount
-    name: {{ template "cray-dns-unbound.fullname" . }}-manager
-    namespace: services
-  - kind: ServiceAccount
-    name: {{ template "cray-dns-unbound.fullname" . }}-coredns
-    namespace: services
 {{- end }}
