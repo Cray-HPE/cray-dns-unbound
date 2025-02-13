@@ -19,7 +19,7 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositori
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
     apk update && apk add --no-cache ldns libcrypto3 libssl3 musl nghttp2-libs dnsperf prometheus-unbound-exporter
 
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v1.24.17/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
+RUN wget -q https://dl.k8s.io/release/v1.32.0/bin/linux/amd64/kubectl -O /usr/bin/kubectl \
     && chmod +x /usr/bin/kubectl
 
 RUN mkdir -p ${UNBOUND_CONFIG_DIRECTORY} && \
