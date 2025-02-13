@@ -14,9 +14,9 @@ dependencies:
     repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
 maintainers:
   - name: spillerc-hpe
-appVersion: 0.8.4
+appVersion: 0.9.0
 annotations:
   artifacthub.io/images: |
     - name: cray-dns-unbound
-      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.8.4
+      image: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound:0.9.0
   artifacthub.io/license: MIT
