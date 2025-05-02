@@ -215,6 +215,45 @@ cray-service:
       nodeSelector: {}
       affinity: {}
       tolerations: []
+    dnsdist:
+      name: dnsdist
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        runAsNonRoot: true
+      image:
+        repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
+        pullPolicy: IfNotPresent
+      command:
+        - /bin/sh
+        - -c
+        - /usr/bin/dnsdist
+        - --supervised
+        - --disable-syslog
+        - --log-timestamps
+      resources:
+        requests:
+          cpu: "0.2"
+          memory: "0.5Gi"
+        limits:
+          cpu: "2"
+          memory: 2Gi
+      env:
+        - name: UNBOUND_CONFIG_DIRECTORY
+          value: "/etc/unbound"
+      ports:
+        - name: udp
+          containerPort: 5553
+          protocol: UDP
+        - name: tcp
+          containerPort: 5553
+          protocol: TCP
+      volumeMounts:
+        - name: cray-dns-unbound-data
+          mountPath: "/configmap"
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
     unbound-exporter:
       name: unbound-exporter
       securityContext:

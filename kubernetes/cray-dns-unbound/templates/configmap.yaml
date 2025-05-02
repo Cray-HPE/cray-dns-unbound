@@ -120,3 +120,12 @@ data:
         control-enable: yes
         control-use-cert: no
         control-interface: 0.0.0.0
+  dnsdist.conf: |
+    setLocal("0.0.0.0:5553")
+    {{- if .Values.forwardZones }}
+    {{- range .Values.forwardZones }}
+    {{- range .forwardIps }}
+    newServer("{{.}}")
+    {{- end }}
+    {{- end }}
+    {{- end }}
