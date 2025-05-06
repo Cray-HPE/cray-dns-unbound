@@ -225,9 +225,9 @@ cray-service:
         repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
         pullPolicy: IfNotPresent
       command:
-        - /bin/sh
-        - -c
         - /usr/bin/dnsdist
+        - -C
+        - /configmap/dnsdist.conf
         - --supervised
         - --disable-syslog
         - --log-timestamps
@@ -238,9 +238,6 @@ cray-service:
         limits:
           cpu: "2"
           memory: 2Gi
-      env:
-        - name: UNBOUND_CONFIG_DIRECTORY
-          value: "/etc/unbound"
       ports:
         - name: udp
           containerPort: 5553
