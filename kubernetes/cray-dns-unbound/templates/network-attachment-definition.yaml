@@ -9,9 +9,9 @@ spec:
   config: |
     {
       "cniVersion": "0.3.0",
-      "type": "ipvlan",
+      "type": "macvlan",
       "master": "{{ .Values.ipv6.interface }}",
-      "mode": "l2",
+      "mode": "bridge",
       "ipam": {
         "type": "host-local",
         "subnet": "{{ required "ipv6.subnet must be set if IPv6 support is enabled" .Values.ipv6.subnet }}",
