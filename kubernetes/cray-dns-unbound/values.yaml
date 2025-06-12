@@ -1,5 +1,8 @@
 domain_name: example  # removed before packaging
 
+image:
+  repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
+
 # if changing LoadBalancer IPs, update cray-dhcp-kea
 hmnLoadBalancerIp: 10.94.100.225
 nmnLoadBalancerIp: 10.92.100.225
@@ -13,6 +16,26 @@ corednsConcurrentConnectionsToFwder: 10000
 # remember to match cache and threads this with .cray-service.containers.cray-dns-unbound.resources.requests.cpu in multiples of 2
 cache: "2"
 threads: "2"
+
+# Preserved to maintain backwards compatibility with anyone who has adjusted the default replica count
+cray-service:
+  replicaCount: 3
+
+resources:
+  cray-dns-unbound:
+    limits:
+      cpu: "4"
+      memory: 8Gi
+    requests:
+      cpu: "2"
+      memory: 4Gi
+  unbound-exporter:
+    limits:
+      cpu: "0.5"
+      memory: 512Mi
+    requests:
+      cpu: "0.25"
+      memory: 256Mi
 
 keaApiEndpoint: http://cray-dhcp-kea-api:8000
 smdApiEndpoint: http://cray-smd
@@ -123,155 +146,16 @@ dnsUnboundExporter:
     metricsRelabelings: {}
     relabelings: {}
 
-cray-service:
-  priorityClassName: "csm-high-priority-service"
-  type: deployment
-  nameOverride: cray-dns-unbound
-  podAnnotations:
-    traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
-  replicaCount: 3
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                    - cray-dns-unbound
-            topologyKey: "kubernetes.io/hostname"
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 4
-      maxUnavailable: 1
-  containers:
-    cray-dns-unbound:
-      name: cray-dns-unbound
-      securityContext:
-        runAsUser: 1001
-        runAsGroup: 1001
-        runAsNonRoot: true
-      image:
-        repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
-        pullPolicy: IfNotPresent
-      resources:
-        requests:
-          cpu: "2"
-          memory: "4Gi"
-        limits:
-          cpu: "4"
-          memory: 8Gi
-      env:
-        - name: UNBOUND_CONFIG_DIRECTORY
-          value: "/etc/unbound"
-        - name: UNBOUND_CONFIGMAP_DIRECTORY
-          value: "/configmap"
-        - name: UNBOUND_CREATE_PTR_RECORDS
-          value: "true"
-        - name: DNS_INITIALIZE_INTERVAL_SECONDS
-          value: "90"
-        - name: UNBOUND_CONTROL_INTERFACE
-          value: "127.0.0.1"
-      ports:
-        - name: udp
-          containerPort: 5053
-          protocol: UDP
-        - name: tcp
-          containerPort: 5053
-          protocol: TCP
-      lifecycle:
-        preStop:
-          exec:
-            command: ["/bin/sh", "-c", "kill `cat /etc/unbound/unbound.pid`; sleep 10"]
-      volumeMounts:
-        - name: cray-dns-unbound-data
-          mountPath: "/configmap"
-        - name: cray-dns-unbound-jobs
-          mountPath: "/srv/unbound"
-      livenessProbe:
-        exec:
-          command:
-            - "nslookup"
-            - "health.check.unbound"
-            - "127.0.0.1:5053"
-        initialDelaySeconds: 30
-        timeoutSeconds: 2
-      readinessProbe:
-        exec:
-          command:
-            - "nslookup"
-            - "packages.local"
-            # will need to restore for pdns cutover
-            # - "health.check.unbound"
-            - "127.0.0.1:5053"
-        failureThreshold: 1
-        initialDelaySeconds: 30
-        periodSeconds: 1
-        successThreshold: 10
-        timeoutSeconds: 1
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
-    unbound-exporter:
-      name: unbound-exporter
-      securityContext:
-        runAsUser: 1002
-        runAsGroup: 1002
-        runAsNonRoot: true
-      image:
-        repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
-        pullPolicy: IfNotPresent
-      command:
-        - /bin/sh
-        - -c
-        - /usr/bin/unbound_exporter
-        - -unbound.host
-        - tcp://${UNBOUND_CONTROL_INTERFACE}:${UNBOUND_CONTROL_PORT}
-      resources:
-        requests:
-          cpu: "0.25"
-          memory: "256Mi"
-        limits:
-          cpu: "0.5"
-          memory: "512Mi"
-      env:
-        - name: UNBOUND_CONTROL_INTERFACE
-          value: "127.0.0.1"
-        - name: UNBOUND_CONTROL_PORT
-          value: "8953"
-      ports:
-        - name: exporter
-          containerPort: 9167
-          protocol: TCP
-      livenessProbe:
-        httpGet:
-          port: 9167
-          path: /metrics
-        initialDelaySeconds: 30
-        timeoutSeconds: 2
-      readinessProbe:
-        httpGet:
-          port: 9167
-          path: /metrics
-        failureThreshold: 1
-        initialDelaySeconds: 30
-        periodSeconds: 1
-        successThreshold: 10
-        timeoutSeconds: 1
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
-  volumes:
-    - name: cray-dns-unbound-data
-      configMap:
-        name: cray-dns-unbound
-    - name: cray-dns-unbound-jobs
-      configMap:
-        defaultMode: 0777
-        name: cray-dns-unbound-jobs
+ipv6:
+  enabled: false
+  interface: bond0.cmn0
+  networkAttachmentName: cray-dns-unbound
+  gateway: ""
+  subnet: ""
+  rangeStart: ""
+  rangeEnd: ""
+
+
 global:
   chart:
     name: cray-dns-unbound

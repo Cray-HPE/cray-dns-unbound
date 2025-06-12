@@ -40,7 +40,11 @@ data:
         interface: 0.0.0.0
         port: {{ .Values.serverPort }}
         so-reuseport: yes
+        {{- if .Values.ipv6.enabled }}
+        do-ip6: yes
+        {{- else }}
         do-ip6: no
+        {{- end }}
         do-daemonize: no
         use-syslog: no
         logfile: ""

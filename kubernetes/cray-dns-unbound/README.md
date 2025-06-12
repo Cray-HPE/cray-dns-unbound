@@ -46,6 +46,23 @@ localRecords:
   ip: "10.13.10.10"
 ```
 
+### IPv6 Support
+
+If IPv6 addresses have been configured on the Customer Management Network (CMN) then `cray-dns-unbound` can be configured to access an IPv6 DNS server by way of a network attachment definition. 
+This is required because CSM currently does not deploy Kubernetes with dual-stack support.
+
+| Property        | Default value | Description                                                                                                 |
+| --------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| ipv6.enabled    | false         | Enable/Disable IPv6 support                                                                                 |
+| ipv6.interface  | bond0.cmn0    | Interface on the NCN Worker node used for the network attachment definition                                 |
+| ipv6.gateway    | None          | The default gateway to use for IPv6 traffic. Must be set if `ipv6.enabled=true`                             |
+| ipv6.subnet     | None          | The IPv6 subnet to use in CIDR form. Must be set if `ipv6.enabled=true`                                     |
+| ipv6.rangeStart | None          | Start address of an IPv6 address pool to be used for `cray-dns-unbound`. Must be set if `ipv6.enabled=true` |
+| ipv6.rangeEnd   | None          | End address of an IPv6 address pool to be used for `cray-dns-unbound`. Must be set if `ipv6.enabled=true`   |
+
+The `rangeStart` and `rangeEnd` parameters define a pool of IP address to be used for cray-dns-unbound pods. This pool must be at least as large as `replicaCount` otherwise pods will fail to start
+if there is no free IP address to be allocated.
+
 ### Other configurable properties
 
 The following properties in values.yaml configure additional aspects of the unbound server. For more information see the [unbound documentation](http://unbound.net/documentation/unbound.conf.html).
@@ -62,7 +79,7 @@ unbound.serverPort: 53
 
 | Property                 | Default value               |
 | ------------------------ | --------------------------- |
-| replicaCount             | 1                           |
+| replicaCount             | 3                           |
 | externalIP               | ""                          |
 | clusterIP                | ""                          |
 | unbound.image.repository | markbnj/unbound-docker      |
