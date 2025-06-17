@@ -1,0 +1,163 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:  
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+  annotations:
+    cray.io/service: cray-dns-unbound
+spec:
+  replicas: {{ index .Values "cray-service" "replicaCount" }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 4
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "cray-dns-unbound.fullname" . }}
+      app.kubernetes.io/instance: {{ template "cray-dns-unbound.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "cray-dns-unbound.fullname" . }}
+        app.kubernetes.io/instance: {{ template "cray-dns-unbound.fullname" . }}
+      annotations:
+        service.cray.io/public: "true"
+        traffic.sidecar.istio.io/excludeOutboundPorts: "5053"
+        {{- if .Values.ipv6.enabled }}
+        k8s.v1.cni.cncf.io/networks: cray-dns-unbound
+        {{- end }}      
+    spec:
+      priorityClassName: csm-high-priority-service
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - {{ template "cray-dns-unbound.fullname" . }}
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - name: cray-dns-unbound
+        image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion (.Values.image.tag) }}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: UNBOUND_CONFIG_DIRECTORY
+          value: /etc/unbound
+        - name: UNBOUND_CONFIGMAP_DIRECTORY
+          value: /configmap
+        - name: UNBOUND_CREATE_PTR_RECORDS
+          value: "true"
+        - name: DNS_INITIALIZE_INTERVAL_SECONDS
+          value: "90"
+        - name: UNBOUND_CONTROL_INTERFACE
+          value: 127.0.0.1
+        ports:
+        - containerPort: 5053
+          name: udp
+          protocol: UDP
+        - containerPort: 5053
+          name: tcp
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - nslookup
+            - health.check.unbound
+            - 127.0.0.1:5053
+          initialDelaySeconds: 30
+          timeoutSeconds: 2
+        readinessProbe:
+          exec:
+            command:
+            - nslookup
+            - packages.local
+            - 127.0.0.1:5053
+          failureThreshold: 1
+          initialDelaySeconds: 30
+          periodSeconds: 1
+          successThreshold: 10
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /configmap
+          name: cray-dns-unbound-data
+        - mountPath: /srv/unbound
+          name: cray-dns-unbound-jobs
+        resources:
+          limits:
+            cpu: '{{ index .Values "resources" "cray-dns-unbound" "limits" "cpu" }}'
+            memory: {{ index .Values "resources" "cray-dns-unbound" "limits" "memory" }}
+          requests:
+            cpu: '{{ index .Values "resources" "cray-dns-unbound" "requests" "cpu" }}'
+            memory: {{ index .Values "resources" "cray-dns-unbound" "requests" "memory" }}
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - kill `cat /etc/unbound/unbound.pid`; sleep 10
+        securityContext:
+          runAsGroup: 1001
+          runAsNonRoot: true
+          runAsUser: 1001
+      - name: unbound-exporter
+        image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion (.Values.image.tag) }}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: UNBOUND_CONTROL_INTERFACE
+          value: 127.0.0.1
+        - name: UNBOUND_CONTROL_PORT
+          value: "8953"
+        command:
+        - /bin/sh
+        - -c
+        - /usr/bin/unbound_exporter
+        - -unbound.host
+        - tcp://${UNBOUND_CONTROL_INTERFACE}:${UNBOUND_CONTROL_PORT}
+        ports:
+        - containerPort: 9167
+          name: exporter
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9167
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9167
+            scheme: HTTP
+          failureThreshold: 1
+          initialDelaySeconds: 30
+          periodSeconds: 1
+          successThreshold: 10
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: '{{ index .Values "resources" "unbound-exporter" "limits" "cpu" }}'
+            memory: {{ index .Values "resources" "unbound-exporter" "limits" "memory" }}
+          requests:
+            cpu: '{{ index .Values "resources" "unbound-exporter" "requests" "cpu" }}'
+            memory: {{ index .Values "resources" "unbound-exporter" "requests" "memory" }}
+        securityContext:
+          runAsGroup: 1002
+          runAsNonRoot: true
+          runAsUser: 1002
+      volumes:
+      - configMap:
+          name: cray-dns-unbound
+        name: cray-dns-unbound-data
+      - configMap:
+          defaultMode: 511
+          name: cray-dns-unbound-jobs
+        name: cray-dns-unbound-jobs

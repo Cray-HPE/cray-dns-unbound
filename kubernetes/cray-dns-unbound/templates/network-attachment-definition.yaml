@@ -1,0 +1,28 @@
+{{- if .Values.ipv6.enabled }}
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: {{ template "cray-dns-unbound.fullname" . }}
+  labels:
+    {{- include "cray-dns-unbound.labels" . | indent 4 }}
+spec:
+  config: |
+    {
+      "cniVersion": "0.3.0",
+      "type": "macvlan",
+      "master": "{{ .Values.ipv6.interface }}",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "subnet": "{{ required "ipv6.subnet must be set if IPv6 support is enabled" .Values.ipv6.subnet }}",
+        "rangeStart": "{{ required "ipv6.rangeStart must be set if IPv6 support is enabled" .Values.ipv6.rangeStart }}",
+        "rangeEnd": "{{ required "ipv6.rangeEnd must be set if IPv6 support is enabled" .Values.ipv6.rangeEnd }}",
+        "routes": [
+          {
+            "dst": "::/0",
+            "gw": "{{ required "ipv6.gateway must be set if IPv6 support is enabled" .Values.ipv6.gateway }}"
+          }
+        ]
+      }
+    }
+{{- end }}
