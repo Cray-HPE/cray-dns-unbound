@@ -208,6 +208,7 @@ def main():
     kea_global_leases = []
     if 'reservations' not in kea_records:
         log.error(f'Kea global reservations data is empty')
+        api_errors = True
     else:
         kea_global_leases = kea_records['reservations']
         log.info(f'Found {len(kea_global_leases)} leases and reservations in Kea globals')
@@ -221,6 +222,7 @@ def main():
     kea_subnets = []
     if not 'subnet4' in kea_records:
         log.error(f'Kea Dhcp4 lease and reservation data is empty')
+        api_errors = True
     else:
         kea_subnets = kea_records['subnet4']
         log.info(f'Found {len(kea_subnets)} subnets in Kea')
