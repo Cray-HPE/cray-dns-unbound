@@ -116,7 +116,7 @@ data:
         {{- if and $.Values.filterExternalRequests (eq .name ".") }}
         name: .
         forward-addr: 127.0.0.1@5553
-        firward-first: yes
+        forward-first: yes
         {{- else }}
         name: {{ .name }}
         {{- range .forwardHosts }}
