@@ -3,6 +3,8 @@ domain_name: example  # removed before packaging
 image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
 
+filterExternalRequests: true
+
 # if changing LoadBalancer IPs, update cray-dhcp-kea
 hmnLoadBalancerIp: 10.94.100.225
 nmnLoadBalancerIp: 10.92.100.225
