@@ -107,6 +107,7 @@ spec:
           runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
+      {{- if .Values.filterExternalRequests }}
       - name: dnsdist
         securityContext:
           runAsUser: 1001
@@ -138,6 +139,7 @@ spec:
         volumeMounts:
         - name: cray-dns-unbound-data
           mountPath: "/configmap"
+      {{- end }}
       - name: unbound-exporter
         image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion (.Values.image.tag) }}
         imagePullPolicy: IfNotPresent
