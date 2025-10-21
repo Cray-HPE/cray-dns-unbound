@@ -153,12 +153,18 @@ data:
   {{- if .Values.filterExternalRequests }}
   dnsdist.conf: |
    setLocal("0.0.0.0:5553")
-   {{- if .Values.forwardZones }}
    {{- range .Values.forwardZones }}
+   {{- if eq .name "." }}
    {{- range .forwardIps }}
    newServer("{{.}}")
    {{- end }}
    {{- end }}
    {{- end }}
+   --- Block bare xname queries from being forwarded. Fully-qualified queries will still be forwarded.
    addAction(RegexRule("^x([0-9]{1,4})c([0-7])s([0-9]+)b([0-9]+)n([0-9]+)$"), RCodeAction(DNSRCode.NXDOMAIN))
+   --- Block Spire SRV queries from being forwarded.
+   addAction(QNameRule("_grpclb._tcp.cray-spire-server."), RCodeAction(DNSRCode.NXDOMAIN))
+   --- Block a few telemetry queries.
+   addAction(QNameRule("metadata.google.internal."), RCodeAction(DNSRCode.NXDOMAIN))
+   addAction(QNameRule("telemetry.openpolicyagent.org."), RCodeAction(DNSRCode.NXDOMAIN))
    {{- end }}
