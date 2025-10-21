@@ -3,6 +3,8 @@ domain_name: example  # removed before packaging
 image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-dns-unbound
 
+# If set block certain internal queries from reaching the upstream DNS server.
+# This option stops a flood of unqualified xname queries for devices that do not exist.
 filterExternalRequests: true
 
 # if changing LoadBalancer IPs, update cray-dhcp-kea
