@@ -107,6 +107,39 @@ spec:
           runAsGroup: 1001
           runAsNonRoot: true
           runAsUser: 1001
+      {{- if .Values.filterExternalRequests }}
+      - name: dnsdist
+        securityContext:
+          runAsUser: 1001
+          runAsGroup: 1001
+          runAsNonRoot: true
+        image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion (.Values.image.tag) }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /usr/bin/dnsdist
+          - -C
+          - /configmap/dnsdist.conf
+          - --supervised
+          - --disable-syslog
+          - --log-timestamps
+        resources:
+          requests:
+            cpu: "0.2"
+            memory: "0.5Gi"
+          limits:
+            cpu: "2"
+            memory: 2Gi
+        ports:
+        - name: udp
+          containerPort: 5553
+          protocol: UDP
+        - name: tcp
+          containerPort: 5553
+          protocol: TCP
+        volumeMounts:
+        - name: cray-dns-unbound-data
+          mountPath: "/configmap"
+      {{- end }}
       - name: unbound-exporter
         image: {{ .Values.image.repository }}:{{ default .Chart.AppVersion (.Values.image.tag) }}
         imagePullPolicy: IfNotPresent

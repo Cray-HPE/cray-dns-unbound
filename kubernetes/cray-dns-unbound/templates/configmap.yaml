@@ -78,6 +78,10 @@ data:
         # Continue to health check down DNS servers so they aren't offline longer than necessary
         infra-keep-probing: yes
         infra-host-ttl: 30
+        {{- if .Values.filterExternalRequests }}
+        # Allow unbound to pass queries to localhost so queries can be passed to the disdist container
+        do-not-query-localhost: no
+        {{- end }}
 
         local-data: "health.check.unbound A 127.0.0.1"
         local-data-ptr: "127.0.0.1 health.check.unbound"
@@ -109,6 +113,11 @@ data:
     {{- range .Values.forwardZones }}
 
     forward-zone:
+        {{- if and $.Values.filterExternalRequests (eq .name ".") }}
+        name: .
+        forward-addr: 127.0.0.1@5553
+        forward-first: yes
+        {{- else }}
         name: {{ .name }}
         {{- range .forwardHosts }}
         forward-host: {{ . }}
@@ -117,6 +126,7 @@ data:
         forward-addr: {{ . }}
         {{- end }}
         forward-first: yes
+        {{- end }}
     {{- end }}
     {{- end }}
 
@@ -140,3 +150,21 @@ data:
         control-enable: yes
         control-use-cert: no
         control-interface: 0.0.0.0
+  {{- if .Values.filterExternalRequests }}
+  dnsdist.conf: |
+   setLocal("0.0.0.0:5553")
+   {{- range .Values.forwardZones }}
+   {{- if eq .name "." }}
+   {{- range .forwardIps }}
+   newServer("{{.}}")
+   {{- end }}
+   {{- end }}
+   {{- end }}
+   --- Block bare xname queries from being forwarded. Fully-qualified queries will still be forwarded.
+   addAction(RegexRule("^x([0-9]{1,4})c([0-7])(s([0-9]+)b([0-9]+)(n([0-9]+))?|r([0-9]+)b([0-9]+))\\.?$"), RCodeAction(DNSRCode.NXDOMAIN))
+   --- Block Spire SRV queries from being forwarded.
+   addAction(QNameRule("_grpclb._tcp.cray-spire-server."), RCodeAction(DNSRCode.NXDOMAIN))
+   --- Block a few telemetry queries.
+   addAction(QNameRule("metadata.google.internal."), RCodeAction(DNSRCode.NXDOMAIN))
+   addAction(QNameRule("telemetry.openpolicyagent.org."), RCodeAction(DNSRCode.NXDOMAIN))
+   {{- end }}
